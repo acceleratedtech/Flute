@@ -1092,6 +1092,18 @@ CSR_Addr   csr_addr_hpmcounter29h  = 12'hC9D;    // Upper 32 bits of performance
 CSR_Addr   csr_addr_hpmcounter30h  = 12'hC9E;    // Upper 32 bits of performance-monitoring counter
 CSR_Addr   csr_addr_hpmcounter31h  = 12'hC9F;    // Upper 32 bits of performance-monitoring counter
 
+// <SANCTUM>
+CSR_Addr   csr_addr_mevbase       = 12'h7c0;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_mevmask       = 12'h7c1;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_meatp         = 12'h7c2;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_mmrbm         = 12'h7c3;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_memrbm        = 12'h7c4;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_mparbase      = 12'h7c5;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_mparmask      = 12'h7c6;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_meparbase     = 12'h7c7;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_meparmask     = 12'h7c8;     // Upper 32 bits of performance-monitoring counter
+// </SANCTUM>
+
 // Information from the CSR on a new trap. 
 typedef struct {
    Addr        pc;

@@ -361,6 +361,44 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
    Reg #(WordXL)  rg_nmi_vector <- mkRegU;
 
    // ----------------------------------------------------------------
+    // <SANCTUM>
+    // ### Enclave virtual base and mask
+    // (per-core) registers
+    // ( defines a virtual region for which enclave page tables are used in
+    //   place of OS-controlled page tables)
+    // (machine-mode non-standard read/write)
+    Reg#(Data) rg_mevbase <- mkReg(maxBound);           // impossible base & mask,
+    Reg#(Data) rg_mevmask <- mkReg(0);                  // so no enclave accesses are possible
+
+    // ### Enclave page table base
+    // (per core) register
+    // ( pointer to a separate page table data structure used to translate enclave
+    //   virtual addresses)
+    // (machine-mode non-standard read/write)
+    //FIXME: Reg#(Bit#(44)) eppn_reg <- mkReg(0);
+    Reg#(Data) rg_meatp <- mkReg(0);
+
+    // ### DRAM bitmap
+    // (per core) registers (OS and Enclave)
+    // ( white-lists the DRAM regions the core is allowed to access via OS and
+    //   enclave virtual addresses)
+    // (machine-mode non-standard read/write)
+    Reg#(Data) rg_mmrbm <- mkReg(maxBound);
+    Reg#(Data) rg_memrbm <- mkReg(0);
+
+    // ### Protected region base and mask
+    // (per core) registers (OS and Enclave)
+    // ( these are used to prevent address translation into a specific range of
+    //   physical addresses, for example to protect the security monitor from all software)
+    // (machine-mode non-standard read/write)
+    Reg#(Data) rg_mparbase <- mkReg(maxBound);
+    Reg#(Data) rg_mparmask <- mkReg(0);
+    Reg#(Data) rg_meparbase <- mkReg(0);
+    Reg#(Data) rg_meparmask <- mkReg(0);
+
+    // </SANCTUM>
+
+   // ----------------------------------------------------------------
    // Reset.
    // Initialize some CSRs.
 
@@ -422,6 +460,23 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
       rg_nmi_vector <= truncate (soc_map.m_nmivec_reset_value);
 
       rg_state <= RF_RUNNING;
+
+      // <SANCTUM>
+      rg_mevbase <= maxBound;
+      rg_mevmask <= 0;                  // so no enclave accesses are possible
+
+      //FIXME: Reg#(Bit#(44)) eppn_reg <- mkReg(0);
+      rg_meatp <= 0;
+
+      rg_mmrbm <= maxBound;
+      rg_memrbm <= 0;
+
+      rg_mparbase <= maxBound;
+      rg_mparmask_csr <= 0;
+      rg_meparbase_csr <= 0;
+      rg_meparmask_csr <= 0;
+      // </SANCTUM>
+
    endrule
 
    // ----------------------------------------------------------------
@@ -571,6 +626,21 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 		     || (csr_addr == csr_addr_dscratch0)
 		     || (csr_addr == csr_addr_dscratch1)
 `endif
+	             // <SANCTUM>
+		     || (csr_addr ==  csr_addr_mevbase)
+		     || (csr_addr ==  csr_addr_mevmask)
+
+		     || (csr_addr ==  csr_addr_meatp)
+
+		     || (csr_addr ==  csr_addr_mmrbm)
+		     || (csr_addr ==  csr_addr_memrbm)
+
+		     || (csr_addr ==  csr_addr_mparbase)
+		     || (csr_addr ==  csr_addr_mparmask)
+		     || (csr_addr ==  csr_addr_meparbase)
+		     || (csr_addr ==  csr_addr_meparmask)
+                     // </SANCTUM>
+
 	 );
       return result;
    endfunction: fv_csr_exists
@@ -1255,7 +1325,7 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
    endmethod
 
    method Action timer_interrupt_req (Bool set_not_clear);
-      csr_mip.timer_interrupt_req  (set_not_clear);     
+      csr_mip.timer_interrupt_req  (set_not_clear);
       if (cfg_verbosity > 1)
 	 $display ("%0d: CSR_RegFile: timer_interrupt_req: %x", rg_mcycle, set_not_clear);
    endmethod
@@ -1346,7 +1416,7 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 `ifdef ISA_PRIV_S
       $display ("sie     = 0x%0h", csr_mie.fv_sie_read);
 `endif
-   endmethod      
+   endmethod
 endmodule
 
 // ================================================================
