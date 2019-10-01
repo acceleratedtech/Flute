@@ -96,7 +96,11 @@ interface IMem_IFC;
 		       Priv_Mode  priv,
 		       Bit #(1)   sstatus_SUM,
 		       Bit #(1)   mstatus_MXR,
-		       WordXL     satp);    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     satp,    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     parbase,
+		       WordXL     parmask,
+		       WordXL     mrbm);
+
 
    // CPU side: IMem response
    (* always_ready *)  method Bool     valid;
@@ -125,7 +129,10 @@ interface DMem_IFC;
 		       Priv_Mode  priv,
 		       Bit #(1)   sstatus_SUM,
 		       Bit #(1)   mstatus_MXR,
-		       WordXL     satp);    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     satp,    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     parbase,
+		       WordXL     parmask,
+		       WordXL     mrbm);
 
    // CPU side: DMem response
    (* always_ready *)  method Bool       valid;

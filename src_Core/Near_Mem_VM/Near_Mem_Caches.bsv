@@ -132,14 +132,17 @@ module mkNear_Mem (Near_Mem_IFC);
 			  Priv_Mode  priv,
 			  Bit #(1)   sstatus_SUM,
 			  Bit #(1)   mstatus_MXR,
-			  WordXL     satp);    // { VM_Mode, ASID, PPN_for_page_table }
+			  WordXL     satp,    // { VM_Mode, ASID, PPN_for_page_table }
+			  WordXL     parbase,
+			  WordXL     parmask,
+			  WordXL     mrbm);
 	 Bit #(7)  amo_funct7  = ?;
 	 Bit #(64) store_value = ?;
 	 icache.req (CACHE_LD, f3,
 `ifdef ISA_A
 		     amo_funct7,
 `endif
-		     addr, store_value, priv, sstatus_SUM, mstatus_MXR, satp);
+		     addr, store_value, priv, sstatus_SUM, mstatus_MXR, satp, parbase, parmask, mrbm);
       endmethod
 
       // CPU side: IMem response
@@ -172,12 +175,15 @@ module mkNear_Mem (Near_Mem_IFC);
 			  Priv_Mode  priv,
 			  Bit #(1)   sstatus_SUM,
 			  Bit #(1)   mstatus_MXR,
-			  WordXL     satp);    // { VM_Mode, ASID, PPN_for_page_table }
+			  WordXL     satp,    // { VM_Mode, ASID, PPN_for_page_table }
+			  WordXL     parbase,
+			  WordXL     parmask,
+			  WordXL     mrbm);
 	 dcache.req (op, f3,
 `ifdef ISA_A
 		     amo_funct7,
 `endif
-		     addr, store_value, priv, sstatus_SUM, mstatus_MXR, satp);
+		     addr, store_value, priv, sstatus_SUM, mstatus_MXR, satp, parbase, parmask, mrbm);
       endmethod
 
       // CPU side: DMem response

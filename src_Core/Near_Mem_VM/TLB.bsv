@@ -355,6 +355,9 @@ deriving (Bits, FShow);
 
 function ActionValue #(VM_Xlate_Result)  fav_vm_xlate (WordXL             addr,
 						       WordXL             satp,
+						       WordXL             parbase,
+						       WordXL             parmask,
+						       WordXL             mrbm,
 						       TLB_Lookup_Result  tlb_result,
 						       Bool               dmem_not_imem,
 						       Bool               read_not_write,
@@ -394,21 +397,42 @@ function ActionValue #(VM_Xlate_Result)  fav_vm_xlate (WordXL             addr,
 	    end
 
 	    else begin
-	       if (tlb_result.pte_level == 0)
+               PA pabase = 0;
+	       if (tlb_result.pte_level == 0) begin
 		  pa = zeroExtend ({fn_PTE_to_PPN (pte),
 				    fn_Addr_to_Offset (addr) });
-
-	       else if (tlb_result.pte_level == 1)
+		  pabase = zeroExtend ({fn_PTE_to_PPN (pte),
+		                    12'd0 });
+               end
+	       else if (tlb_result.pte_level == 1) begin
 		  pa = zeroExtend ({fn_PTE_to_PPN_mega (pte),
 				    fn_Addr_to_VPN_0 (addr),
 				    fn_Addr_to_Offset (addr) });
+		  pabase = zeroExtend ({fn_PTE_to_PPN_mega (pte),
+				    fn_Addr_to_VPN_0 (addr),
+				    12'd0 });
+               end
 `ifdef SV39
-	       else if (tlb_result.pte_level == 2)
+	       else if (tlb_result.pte_level == 2) begin
 		  pa = zeroExtend ({fn_PTE_to_PPN_giga (pte),
 				    fn_Addr_to_VPN_1 (addr),
 				    fn_Addr_to_VPN_0 (addr),
 				    fn_Addr_to_Offset (addr) });
+		  pabase = zeroExtend ({fn_PTE_to_PPN_giga (pte),
+				    fn_Addr_to_VPN_1 (addr),
+				    fn_Addr_to_VPN_0 (addr),
+				    12'd0 });
+               end
 `endif
+
+               //FIXME: Check pabase sanctum parbase/parmask and mrbm
+	       Bool is_enclave_access = (pabase & parmask) == pabase;
+	       Bool inside_region_bitmap = True; //FIXME: Enclave (fn_Get_Addr_Regions(pabase, isLeafPTE(pte), level) & mrbm) != 0;
+
+               if (is_enclave_access)
+                  outcome = VM_XLATE_EXCEPTION;
+               if (!inside_region_bitmap)
+                  outcome = VM_XLATE_EXCEPTION;
 
 	       // $display ("    fav_vm_xlate: PTE.A = %0d", fn_PTE_to_A (pte));
 	       if (fn_PTE_to_A (pte) == 1'b0) begin

@@ -106,7 +106,10 @@ interface MMU_Cache_IFC;
 		       Priv_Mode  priv,
 		       Bit #(1)   sstatus_SUM,
 		       Bit #(1)   mstatus_MXR,
-		       WordXL     satp);    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     satp,    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     parbase,
+		       WordXL     parmask,
+		       WordXL     mrbm);
 
    // CPU interface: response
    (* always_ready *)  method Bool       valid;
@@ -487,6 +490,9 @@ module mkMMU_Cache  #(parameter Bool dmem_not_imem)  (MMU_Cache_IFC);
    WordXL z = ?;
    Reg #(WordXL)     rg_satp        = fn_genNullRegIfc (z);
 `endif
+   Reg #(WordXL)     rg_parbase     <- mkRegU;    // Copy of value in parbase/eparbase CSR
+   Reg #(WordXL)     rg_parmask     <- mkRegU;    // Copy of value in parmask/eparmask CSR
+   Reg #(WordXL)     rg_mrbm        <- mkRegU;    // Copy of value in mrbm / embrm CSR
 
    // Phys addr (initially taken from rg_addr; VM xlation may replace it)
    Reg #(PA)  rg_pa <- mkRegU;
@@ -904,9 +910,17 @@ module mkMMU_Cache  #(parameter Bool dmem_not_imem)  (MMU_Cache_IFC);
       // ----------------
       // Virtual Memory translation
 
+      Bool is_enclave_access = False;
+      WordXL atp = rg_satp;
+      WordXL parbase = rg_parbase;
+      WordXL parmask = rg_parmask;
+      WordXL mrbm = rg_mrbm;
 `ifdef ISA_PRIV_S
       VM_Xlate_Result vm_xlate_result <- fav_vm_xlate (rg_addr,
-						       rg_satp,
+						       atp,
+						       parbase,
+						       parmask,
+						       mrbm,
 						       tlb_result,
 						       dmem_not_imem,
 						       ((rg_op == CACHE_LD) || is_AMO_LR),
@@ -1861,7 +1875,10 @@ module mkMMU_Cache  #(parameter Bool dmem_not_imem)  (MMU_Cache_IFC);
 		       Priv_Mode  priv,
 		       Bit #(1)   sstatus_SUM,
 		       Bit #(1)   mstatus_MXR,
-		       WordXL     satp);    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     satp,    // { VM_Mode, ASID, PPN_for_page_table }
+		       WordXL     parbase,
+		       WordXL     parmask,
+		       WordXL     mrbm);
 
       if (cfg_verbosity > 1) begin
 	 $display ("%0d: %s.req: op:", cur_cycle, d_or_i, fshow (op),
@@ -1886,6 +1903,9 @@ module mkMMU_Cache  #(parameter Bool dmem_not_imem)  (MMU_Cache_IFC);
       rg_sstatus_SUM <= sstatus_SUM;
       rg_mstatus_MXR <= mstatus_MXR;
       rg_satp        <= satp;
+      rg_parbase     <= parbase;
+      rg_parmask     <= parmask;
+      rg_mrbm        <= mrbm;
 
       // Initial default PA assumes no VM translation
       rg_pa <= fn_WordXL_to_PA (addr);
