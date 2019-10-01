@@ -98,6 +98,27 @@ interface CSR_RegFile_IFC;
    (* always_ready *)
    method WordXL read_satp;
 
+   // <SANCTUM>
+   (* always_ready *)
+   method WordXL read_mevbase;
+   (* always_ready *)
+   method WordXL read_mevmask;
+   (* always_ready *)
+   method WordXL read_meatp;
+   (* always_ready *)
+   method WordXL read_mparbase;
+   (* always_ready *)
+   method WordXL read_mparmask;
+   (* always_ready *)
+   method WordXL read_meparbase;
+   (* always_ready *)
+   method WordXL read_meparmask;
+   (* always_ready *)
+   method WordXL read_memrbm;
+   (* always_ready *)
+   method WordXL read_mmrbm;
+   // </SANCTUM>
+
    // CSR trap actions
    method ActionValue #(Trap_Info)
           csr_trap_actions (Priv_Mode  from_priv,
@@ -367,8 +388,8 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
     // ( defines a virtual region for which enclave page tables are used in
     //   place of OS-controlled page tables)
     // (machine-mode non-standard read/write)
-    Reg#(Data) rg_mevbase <- mkReg(maxBound);           // impossible base & mask,
-    Reg#(Data) rg_mevmask <- mkReg(0);                  // so no enclave accesses are possible
+    Reg#(WordXL) rg_mevbase <- mkReg(maxBound);           // impossible base & mask,
+    Reg#(WordXL) rg_mevmask <- mkReg(0);                  // so no enclave accesses are possible
 
     // ### Enclave page table base
     // (per core) register
@@ -376,25 +397,25 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
     //   virtual addresses)
     // (machine-mode non-standard read/write)
     //FIXME: Reg#(Bit#(44)) eppn_reg <- mkReg(0);
-    Reg#(Data) rg_meatp <- mkReg(0);
+    Reg#(WordXL) rg_meatp <- mkReg(0);
 
     // ### DRAM bitmap
     // (per core) registers (OS and Enclave)
     // ( white-lists the DRAM regions the core is allowed to access via OS and
     //   enclave virtual addresses)
     // (machine-mode non-standard read/write)
-    Reg#(Data) rg_mmrbm <- mkReg(maxBound);
-    Reg#(Data) rg_memrbm <- mkReg(0);
+    Reg#(WordXL) rg_mmrbm <- mkReg(maxBound);
+    Reg#(WordXL) rg_memrbm <- mkReg(0);
 
     // ### Protected region base and mask
     // (per core) registers (OS and Enclave)
     // ( these are used to prevent address translation into a specific range of
     //   physical addresses, for example to protect the security monitor from all software)
     // (machine-mode non-standard read/write)
-    Reg#(Data) rg_mparbase <- mkReg(maxBound);
-    Reg#(Data) rg_mparmask <- mkReg(0);
-    Reg#(Data) rg_meparbase <- mkReg(0);
-    Reg#(Data) rg_meparmask <- mkReg(0);
+    Reg#(WordXL) rg_mparbase <- mkReg(maxBound);
+    Reg#(WordXL) rg_mparmask <- mkReg(0);
+    Reg#(WordXL) rg_meparbase <- mkReg(0);
+    Reg#(WordXL) rg_meparmask <- mkReg(0);
 
     // </SANCTUM>
 
@@ -472,9 +493,9 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
       rg_memrbm <= 0;
 
       rg_mparbase <= maxBound;
-      rg_mparmask_csr <= 0;
-      rg_meparbase_csr <= 0;
-      rg_meparmask_csr <= 0;
+      rg_mparmask <= 0;
+      rg_meparbase <= 0;
+      rg_meparmask <= 0;
       // </SANCTUM>
 
    endrule
@@ -731,6 +752,21 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 	    csr_addr_mtval:      m_csr_value = tagged Valid rg_mtval;
 	    csr_addr_mip:        m_csr_value = tagged Valid (csr_mip.fv_read);
 
+            // <SANCTUM>
+            csr_addr_mevbase:    m_csr_value = tagged Valid rg_mevbase;
+            csr_addr_mevmask:    m_csr_value = tagged Valid rg_mevmask;
+
+            csr_addr_meatp:      m_csr_value = tagged Valid rg_meatp;
+
+            csr_addr_mmrbm:      m_csr_value = tagged Valid rg_mmrbm;
+            csr_addr_memrbm:     m_csr_value = tagged Valid rg_memrbm;
+
+            csr_addr_mparbase:   m_csr_value = tagged Valid rg_mparbase;
+            csr_addr_mparmask:   m_csr_value = tagged Valid rg_mparmask;
+            csr_addr_meparbase:  m_csr_value = tagged Valid rg_meparbase;
+            csr_addr_meparmask:  m_csr_value = tagged Valid rg_meparmask;
+            // </SANCTUM>
+
 	    // TODO: Phys Mem Protection regs
 	    // csr_pmpcfg0:   m_csr_value = tagged Valid rf_pmpcfg.sub (0);
 	    // csr_pmpcfg1:   m_csr_value = tagged Valid rf_pmpcfg.sub (1);
@@ -887,6 +923,7 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 	       csr_addr_satp:       begin
 				       result   = wordxl;
 				       rg_satp <= result;
+				       $display("Updating satp: %h", result);
 				    end
 	       csr_addr_medeleg:    begin
 				       result      = (wordxl & 'h_B3FF);  // 16 bits relevant and some are 0
@@ -895,6 +932,21 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 	       csr_addr_mideleg:    begin
 				       result      = (wordxl & 'h_0FFF);  // 12 bits relevant
 				       rg_mideleg <= truncate (result);
+				    end
+	       csr_addr_meatp:      begin
+				       result   = wordxl;
+				       rg_meatp <= result;
+				       $display("Updating meatp: %h", result);
+				    end
+	       csr_addr_mevbase:    begin
+				       result   = wordxl;
+				       rg_mevbase <= result;
+				       $display("Updating mevbase: %h", result);
+				    end
+	       csr_addr_mevmask:    begin
+				       result   = wordxl;
+				       rg_mevmask <= result;
+				       $display("Updating mevmask: %h", result);
 				    end
 `endif
 
@@ -1196,6 +1248,36 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 `else
       return  ?;
 `endif
+   endmethod
+
+   method WordXL read_mevbase;
+      return  rg_mevbase;
+   endmethod
+
+   method WordXL read_mevmask;
+      return  rg_mevmask;
+   endmethod
+   // Read MEATP
+   method WordXL read_meatp;
+      return  rg_meatp;
+   endmethod
+   method WordXL read_meparbase;
+      return  rg_meparbase;
+   endmethod
+   method WordXL read_meparmask;
+      return  rg_meparmask;
+   endmethod
+   method WordXL read_mparbase;
+      return  rg_mparbase;
+   endmethod
+   method WordXL read_mparmask;
+      return  rg_mparmask;
+   endmethod
+   method WordXL read_memrbm;
+      return  rg_memrbm;
+   endmethod
+   method WordXL read_mmrbm;
+      return  rg_mmrbm;
    endmethod
 
    // CSR Trap actions

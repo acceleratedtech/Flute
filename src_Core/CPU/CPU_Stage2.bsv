@@ -558,6 +558,12 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 	    else if (x.op_stage2 == OP_Stage2_AMO) cache_op = CACHE_AMO;
 `endif
 
+	    Bool is_enclave_fetch = ((x.addr & csr_regfile.read_mevmask) ==  csr_regfile.read_mevbase);
+	    WordXL atp = is_enclave_fetch ? csr_regfile.read_meatp : csr_regfile.read_satp;
+	    WordXL parbase = is_enclave_fetch ? csr_regfile.read_meparbase : csr_regfile.read_mparbase;
+	    WordXL parmask = is_enclave_fetch ? csr_regfile.read_meparmask : csr_regfile.read_mparmask;
+	    WordXL mrbm = is_enclave_fetch ? csr_regfile.read_memrbm : csr_regfile.read_mmrbm;
+
 	    dcache.req (cache_op,
 			instr_funct3 (x.instr),
 `ifdef ISA_A
@@ -572,7 +578,10 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 			mem_priv,
 			sstatus_SUM,
 			mstatus_MXR,
-			csr_regfile.read_satp);
+			atp,
+			parbase,
+			parmask,
+			mrbm);
 	 end
 
 `ifdef SHIFT_SERIAL

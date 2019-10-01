@@ -54,7 +54,10 @@ interface CPU_StageF_IFC;
 		      Priv_Mode        priv,
 		      Bit #(1)         sstatus_SUM,
 		      Bit #(1)         mstatus_MXR,
-		      WordXL           satp);
+		      WordXL           satp,
+		      WordXL           parbase,
+		      WordXL           parmask,
+		      WordXL           mrbm);
 
    (* always_ready *)
    method Action set_full (Bool full);
@@ -134,14 +137,17 @@ module mkCPU_StageF #(Bit #(4)  verbosity,
 		      Priv_Mode        priv,
 		      Bit #(1)         sstatus_SUM,
 		      Bit #(1)         mstatus_MXR,
-		      WordXL           satp);
+		      WordXL           satp,
+		      WordXL           parbase,
+		      WordXL           parmask,
+		      WordXL           mrbm);
       if (verbosity > 1) begin
 	 $write   ("    CPU_StageF.enq:  pc:0x%0h  epoch:%0d  priv:%0d", pc, epoch, priv);
 	 $display ("  sstatus_SUM:%0d  mstatus_MXR:%0d  satp:0x%0h  m_old_pc:",
 		   sstatus_SUM, mstatus_MXR, satp, fshow (m_old_pc));
       end
 
-      imem.req (f3_LW, pc, priv, sstatus_SUM, mstatus_MXR, satp);
+      imem.req (f3_LW, pc, priv, sstatus_SUM, mstatus_MXR, satp, parbase, parmask, mrbm);
       branch_predictor.predict_req (pc, m_old_pc);    // TODO: ASID.VA vs PA?
 
       rg_epoch <= epoch;

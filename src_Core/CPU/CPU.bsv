@@ -343,13 +343,23 @@ module mkCPU (CPU_IFC);
 				    Bit #(1) sstatus_SUM);
       action
 	 // Initiate the fetch
+         Bool is_enclave_fetch = ((next_pc & csr_regfile.read_mevmask) ==  csr_regfile.read_mevbase);
+         WordXL atp = is_enclave_fetch ? csr_regfile.read_meatp : csr_regfile.read_satp;
+         WordXL parbase = is_enclave_fetch ? csr_regfile.read_meparbase : csr_regfile.read_mparbase;
+         WordXL parmask = is_enclave_fetch ? csr_regfile.read_meparmask : csr_regfile.read_mparmask;
+         WordXL mrbm = is_enclave_fetch ? csr_regfile.read_memrbm : csr_regfile.read_mmrbm;
+	 if (is_enclave_fetch)
+	    $display("Enclave fetch: next_pc %h mevbase %h mevmask %h", next_pc, csr_regfile.read_mevbase, csr_regfile.read_mevmask);
 	 stageF.enq (epoch,
 		     m_old_pc,
 		     next_pc,
 		     priv,
 		     sstatus_SUM,
 		     mstatus_MXR,
-		     csr_regfile.read_satp);
+		     atp,
+		     parbase,
+		     parmask,
+		     mrbm);
       endaction
    endfunction
 

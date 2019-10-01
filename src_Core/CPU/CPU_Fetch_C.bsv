@@ -56,6 +56,9 @@ module mkCPU_Fetch_C #(IMem_IFC  imem32) (IMem_IFC);
    Reg #(Bit #(1))  rg_sstatus_SUM <- mkRegU;
    Reg #(Bit #(1))  rg_mstatus_MXR <- mkRegU;
    Reg #(WordXL)    rg_satp        <- mkRegU;
+   Reg #(WordXL)    rg_parbase     <- mkRegU;
+   Reg #(WordXL)    rg_parmask     <- mkRegU;
+   Reg #(WordXL)    rg_mrbm        <- mkRegU;
 
    // Holds the faulting address
    Reg #(WordXL) rg_tval <- mkRegU;
@@ -133,7 +136,7 @@ module mkCPU_Fetch_C #(IMem_IFC  imem32) (IMem_IFC);
    (* no_implicit_conditions, fire_when_enabled *)
    rule rl_fetch_next_32b (imem32.valid && cond_i32_odd_fetch_next);
       Addr next_word_addr = rg_pc + 2;
-      imem32.req (rg_f3, next_word_addr, rg_priv, rg_sstatus_SUM, rg_mstatus_MXR, rg_satp);
+      imem32.req (rg_f3, next_word_addr, rg_priv, rg_sstatus_SUM, rg_mstatus_MXR, rg_satp, rg_parbase, rg_parmask, rg_mrbm);
       rg_instr_15_0 <= imem32.instr [31:16];
       rg_tval <= next_word_addr;
       if (verbosity != 0)
@@ -169,8 +172,10 @@ module mkCPU_Fetch_C #(IMem_IFC  imem32) (IMem_IFC);
 		       Priv_Mode  priv,
 		       Bit #(1)   sstatus_SUM,
 		       Bit #(1)   mstatus_MXR,
-		       WordXL     satp               // { VM_Mode, ASID, PPN_for_page_table }
-		       ) if (! cond_i32_odd_fetch_next);
+                       WordXL     satp,               // { VM_Mode, ASID, PPN_for_page_table }
+                       WordXL     parbase,
+                       WordXL     parmask,
+                       WordXL     mrbm) if (! cond_i32_odd_fetch_next);
       rg_f3          <= f3;
       rg_pc          <= addr;
       rg_priv        <= priv;
@@ -178,8 +183,11 @@ module mkCPU_Fetch_C #(IMem_IFC  imem32) (IMem_IFC);
       rg_mstatus_MXR <= mstatus_MXR;
       rg_satp        <= satp;
       rg_tval        <= addr;
+      rg_parbase     <= parbase;
+      rg_parmask     <= parmask;
+      rg_mrbm        <= mrbm;
       WordXL even_addr = { addr [xlen-1:2], 2'b_00 };
-      imem32.req (f3, even_addr, priv, sstatus_SUM, mstatus_MXR, satp);
+      imem32.req (f3, even_addr, priv, sstatus_SUM, mstatus_MXR, satp, parbase, parmask, mrbm);
       if (verbosity > 0) begin
 	 $display ("CPU_Fetch_C.req: addr 0x%0h, even_addr 0x%0h", addr, even_addr);
       end
