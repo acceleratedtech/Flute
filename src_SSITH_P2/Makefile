@@ -56,7 +56,7 @@ TOPMODULE = mkP2_Core
 # bsc compilation flags
 
 BSC_COMPILATION_FLAGS += \
-	-keep-fires -aggressive-conditions -no-warn-action-shadowing -no-show-timestamps \
+	-keep-fires -aggressive-conditions -no-warn-action-shadowing \
 	-suppress-warnings G0020    \
 	+RTS -K128M -RTS  -show-range-conflict
 
