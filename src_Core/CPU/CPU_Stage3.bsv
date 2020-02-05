@@ -98,7 +98,7 @@ module mkCPU_Stage3 #(Bit #(4)         verbosity,
 			     rd:           rg_stage3.rd,
 `ifdef ISA_D
 			     // WordXL        WordFL (64)
-			     rd_val:       truncate (rg_stage3.rd_val)
+			     rd_val:       RegValue { data: truncate (rg_stage3.rd_val), tag: rg_stage3.rd_tag }
 `else
 			     // WordXL        WordXL
 			     rd_val:       rg_stage3.rd_val
@@ -110,16 +110,17 @@ module mkCPU_Stage3 #(Bit #(4)         verbosity,
 			       rd:           rg_stage3.rd,
 `ifdef ISA_D
 			       // WordFL        WordFL
-			       rd_val:       rg_stage3.rd_val
+			       rd_val:       rg_stage3.rd_val,
 `else
 `ifdef RV64
 			       // WordFL (32)   WordXL (64)
-			       rd_val:       truncate (rg_stage3.rd_val)
+			       rd_val:       truncate (rg_stage3.rd_val.data),
 `else
 			       // WordFL (32)   WordXL (32)
-			       rd_val:       rg_stage3.rd_val
+			       rd_val:       rg_stage3.rd_val.data,
 `endif
 `endif
+	                       rd_tag: rg_stage3.rd_tag
 			       };
 `endif
 
@@ -177,14 +178,14 @@ module mkCPU_Stage3 #(Bit #(4)         verbosity,
             // Write to GPR in a FD system
             else
 `ifdef RV64
-               gpr_regfile.write_rd (rg_stage3.rd, rg_stage3.rd_val);
+               gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: rg_stage3.rd_val, tag: rg_stage3.rd_tag });
 `endif
 `ifdef RV32
-               gpr_regfile.write_rd (rg_stage3.rd, truncate (rg_stage3.rd_val));
+               gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: truncate (rg_stage3.rd_val), tag: rg_stage3.rd_tag });
 `endif
 `else
             // Write to GPR in a non-FD system
-            gpr_regfile.write_rd (rg_stage3.rd, rg_stage3.rd_val);
+            gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: rg_stage3.rd_val, tag: rg_stage3.rd_tag });
 `endif
 
 	    if (verbosity > 1)

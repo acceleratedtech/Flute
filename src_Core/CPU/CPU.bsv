@@ -26,6 +26,7 @@ import GetPut       :: *;
 import ClientServer :: *;
 import Connectable  :: *;
 import ConfigReg    :: *;
+import DefaultValue :: *;
 
 // ----------------
 // BSV additional libs
@@ -980,7 +981,7 @@ module mkCPU (CPU_IFC);
 
 	 // Writeback to GPR file
 	 let new_rd_val = csr_val;
-	 gpr_regfile.write_rd (rd, new_rd_val);
+	 gpr_regfile.write_rd (rd, RegValue { data: new_rd_val, tag: defaultValue });
 
 	 // Writeback to CSR file
 	 let new_csr_val <- csr_regfile.mav_csr_write (csr_addr, rs1_val);
@@ -1085,7 +1086,7 @@ module mkCPU (CPU_IFC);
 
 	 // Writeback to GPR file
 	 let new_rd_val = csr_val;
-	 gpr_regfile.write_rd (rd, new_rd_val);
+	 gpr_regfile.write_rd (rd, RegValue { data: new_rd_val, tag: defaultValue });
 
 	 // Writeback to CSR file, but only if rs1 != 0
 	 let x = (  ((funct3 == f3_CSRRS) || (funct3 == f3_CSRRSI))
@@ -1711,7 +1712,7 @@ module mkCPU (CPU_IFC);
       let req <- pop (f_gpr_reqs);
       Bit #(5) regname = req.address;
       let data = gpr_regfile.read_rs1_port2 (regname);
-      let rsp = DM_CPU_Rsp {ok: True, data: data};
+      let rsp = DM_CPU_Rsp {ok: True, data: data.data};
       f_gpr_rsps.enq (rsp);
       if (cur_verbosity > 1)
 	 $display ("%0d: %m.rl_debug_read_gpr: reg %0d => 0x%0h",
@@ -1722,7 +1723,7 @@ module mkCPU (CPU_IFC);
       let req <- pop (f_gpr_reqs);
       Bit #(5) regname = req.address;
       let data = req.data;
-      gpr_regfile.write_rd (regname, data);
+      gpr_regfile.write_rd (regname, RegValue { data: data, tag: defaultValue });
 
       let rsp = DM_CPU_Rsp {ok: True, data: ?};
       f_gpr_rsps.enq (rsp);

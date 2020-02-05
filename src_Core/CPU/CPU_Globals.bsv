@@ -20,7 +20,8 @@ package CPU_Globals;
 // Project imports
 
 import ISA_Decls :: *;
-
+import GPR_RegFile :: *;
+import TagPolicy :: *;
 import TV_Info   :: *;
 
 // ================================================================
@@ -62,7 +63,7 @@ deriving (Eq, Bits, FShow);
 typedef struct {
    Bypass_State  bypass_state;
    RegName       rd;
-   Word          rd_val;
+   RegValue      rd_val;
    } Bypass
 deriving (Bits);
 
@@ -84,6 +85,7 @@ typedef struct {
    Bypass_State  bypass_state;
    RegName       rd;
    WordFL        rd_val;
+   TagT          rd_tag;
    } FBypass
 deriving (Bits);
 
@@ -111,7 +113,8 @@ Bypass no_bypass = Bypass {bypass_state: BYPASS_RD_NONE,
 `ifdef ISA_F
 FBypass no_fbypass = FBypass {bypass_state: BYPASS_RD_NONE,
 			      rd: ?,
-			      rd_val: ? };
+			      rd_val: ?,
+			      rd_tag: ? };
 `endif
 
 // ----------------
@@ -119,11 +122,11 @@ FBypass no_fbypass = FBypass {bypass_state: BYPASS_RD_NONE,
 // Returns '(busy, val)'
 // 'busy' means that the RegName is valid and matches, but the value is not available yet
 
-function Tuple2 #(Bool, Word) fn_gpr_bypass (Bypass bypass, RegName rd, Word rd_val);
+function Tuple2 #(Bool, RegValue) fn_gpr_bypass (Bypass bypass, RegName rd, RegValue rd_val);
    Bool busy = ((bypass.bypass_state == BYPASS_RD) && (bypass.rd == rd));
-   WordXL val = (  ((bypass.bypass_state == BYPASS_RD_RDVAL) && (bypass.rd == rd))
-		 ? bypass.rd_val
-		 : rd_val);
+   RegValue val  = (  ((bypass.bypass_state == BYPASS_RD_RDVAL) && (bypass.rd == rd))
+                   ? bypass.rd_val
+                   : rd_val);
    return tuple2 (busy, val);
 endfunction
 
@@ -384,6 +387,8 @@ typedef struct {
    WordXL     val2;     // OP_Stage2_ST: store-val;
                         // OP_Stage2_M and OP_Stage2_FD: arg2
 `endif
+   TagT       tag1;
+   TagT       tag2;
 
 `ifdef ISA_F
    WordFL     val3;     // OP_Stage2_FD: arg3
@@ -474,6 +479,7 @@ typedef struct {
 `else
    WordXL    rd_val;
 `endif
+   TagT      rd_tag;
    } Data_Stage2_to_Stage3
 deriving (Bits);
 
