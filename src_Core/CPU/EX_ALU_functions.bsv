@@ -17,7 +17,8 @@ fv_ALU;
 // ================================================================
 // BSV library imports
 
-import Vector :: *;
+import DefaultValue :: *;
+import Vector       :: *;
 
 // ----------------
 // BSV additional libs
@@ -29,6 +30,7 @@ import Vector :: *;
 
 import ISA_Decls   :: *;
 import CPU_Globals :: *;
+import TagPolicy   :: *;
 import TV_Info     :: *;
 
 // ================================================================
@@ -45,6 +47,8 @@ typedef struct {
    Decoded_Instr  decoded_instr;
    WordXL         rs1_val;
    WordXL         rs2_val;
+   TagT           rs1_tag;
+   TagT           rs2_tag;
    WordXL         mstatus;
 `ifdef ISA_F
    Bit #(3)       fcsr_frm;
@@ -97,6 +101,8 @@ typedef struct {
 		        // OP_Stage2_ST: store-val
                         // OP_Stage2_M, OP_Stage2_FD: arg2
 `endif
+   TagT       tag1;     // OP_Stage2_FD: arg1 tag
+   TagT       tag2;     // OP_Stage2_FD: arg2 tag
 `ifdef ISA_F
    WordFL     val3;     // OP_Stage2_FD: arg3
    Bool       rd_in_fpr;// result to be written to fpr
@@ -115,6 +121,8 @@ ALU_Outputs alu_outputs_base
 	       addr      : ?,
 	       val1      : ?,
 	       val2      : ?,
+	       tag1      : defaultValue,
+	       tag2      : defaultValue,
 `ifdef ISA_F
 	       val3      : ?,
 	       rd_in_fpr : False,
@@ -282,7 +290,7 @@ function ALU_Outputs fv_JAL (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = ret_pc;
 `endif
-
+   alu_outputs.tag1      = defaultValue;
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (next_pc,
 					  fv_trace_isize (inputs),
@@ -325,6 +333,7 @@ function ALU_Outputs fv_JALR (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = ret_pc;
 `endif
+   alu_outputs.tag1      = defaultValue;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (next_pc,
@@ -399,10 +408,12 @@ function ALU_Outputs fv_OP_and_OP_IMM_shifts (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
+   alu_outputs.tag1      = defaultValue;
 `else
    // Will be executed in serial Shifter_Box later
    alu_outputs.op_stage2 = OP_Stage2_SH;
    alu_outputs.val1      = rs1_val;
+   alu_outputs.tag1      = defaultValue;
    // Encode 'arith-shift' in bit [7] of val2
 `ifdef ISA_D
    WordFL val2 = extend (shamt);
@@ -468,6 +479,7 @@ function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
+   alu_outputs.tag1      = defaultValue;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -528,6 +540,7 @@ function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
+   alu_outputs.tag1      = defaultValue;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -580,6 +593,7 @@ function ALU_Outputs fv_OP_32 (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
+   alu_outputs.tag1      = defaultValue;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -606,6 +620,7 @@ function ALU_Outputs fv_LUI (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
+   alu_outputs.tag1      = defaultValue;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -629,6 +644,7 @@ function ALU_Outputs fv_AUIPC (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
+   alu_outputs.tag1      = defaultValue;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -902,6 +918,7 @@ function ALU_Outputs fv_SYSTEM (ALU_Inputs inputs);
 `else
       alu_outputs.val1      = rs1_val;
 `endif
+      alu_outputs.tag1      = defaultValue;
    end
 
    // CSRRS, CSRRSI, CSRRC, CSRRCI
@@ -916,6 +933,7 @@ function ALU_Outputs fv_SYSTEM (ALU_Inputs inputs);
 `else
       alu_outputs.val1      = rs1_val;
 `endif
+      alu_outputs.tag1      = defaultValue;
    end
 
    // funct3 is not f3_PRIV
@@ -1087,12 +1105,15 @@ function ALU_Outputs fv_ALU (ALU_Inputs inputs);
 	 alu_outputs.op_stage2 = OP_Stage2_M;
 	 alu_outputs.rd        = inputs.decoded_instr.rd;
 `ifdef ISA_D
+//FIXME: WordFL
 	 alu_outputs.val1      = extend (inputs.rs1_val);
 	 alu_outputs.val2      = extend (inputs.rs2_val);
 `else
 	 alu_outputs.val1      = inputs.rs1_val;
 	 alu_outputs.val2      = inputs.rs2_val;
 `endif
+         alu_outputs.tag1      = inputs.rs1_tag;
+         alu_outputs.tag2      = inputs.rs2_tag;
 
 	 // Normal trace output (if no trap)
 	 alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -1112,6 +1133,8 @@ function ALU_Outputs fv_ALU (ALU_Inputs inputs);
 	 alu_outputs.rd        = inputs.decoded_instr.rd;
 	 alu_outputs.val1      = inputs.rs1_val;
 	 alu_outputs.val2      = inputs.rs2_val;
+         alu_outputs.tag1      = inputs.rs1_tag;
+         alu_outputs.tag2      = inputs.rs2_tag;
 
 	 // Normal trace output (if no trap)
 	 alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),

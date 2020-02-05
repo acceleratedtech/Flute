@@ -114,7 +114,7 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
    match { .busy1a, .rs1a } = fn_gpr_bypass (bypass_from_stage3, rs1, rs1_val);
    match { .busy1b, .rs1b } = fn_gpr_bypass (bypass_from_stage2, rs1, rs1a);
    Bool rs1_busy = (busy1a || busy1b);
-   Word rs1_val_bypassed = ((rs1 == 0) ? 0 : rs1b);
+   RegValue rs1_val_bypassed = ((rs1 == 0) ? 0 : rs1b);
 
    // Register rs2 read and bypass
    let rs2 = decoded_instr.rs2;
@@ -122,7 +122,7 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
    match { .busy2a, .rs2a } = fn_gpr_bypass (bypass_from_stage3, rs2, rs2_val);
    match { .busy2b, .rs2b } = fn_gpr_bypass (bypass_from_stage2, rs2, rs2a);
    Bool rs2_busy = (busy2a || busy2b);
-   Word rs2_val_bypassed = ((rs2 == 0) ? 0 : rs2b);
+   RegValue rs2_val_bypassed = ((rs2 == 0) ? 0 : rs2b);
 
 `ifdef ISA_F
    // FP Register rs1 read and bypass
@@ -157,8 +157,10 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 				instr_C        : rg_stage_input.instr_C,
 `endif
 				decoded_instr  : rg_stage_input.decoded_instr,
-				rs1_val        : rs1_val_bypassed,
-				rs2_val        : rs2_val_bypassed,
+				rs1_val        : rs1_val_bypassed.data,
+				rs2_val        : rs2_val_bypassed.data,
+				rs1_tag        : rs1_val_bypassed.tag,
+				rs2_tag        : rs2_val_bypassed.tag,
 `ifdef ISA_F
 				frs1_val       : frs1_val_bypassed,
 				frs2_val       : frs2_val_bypassed,
@@ -177,6 +179,8 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 					       addr          : alu_outputs.addr,
 					       val1          : alu_outputs.val1,
 					       val2          : alu_outputs.val2,
+					       tag1          : alu_outputs.tag1,
+					       tag2          : alu_outputs.tag2,
 `ifdef ISA_F
 					       val3          : alu_outputs.val3,
 					       rd_in_fpr     : alu_outputs.rd_in_fpr,
@@ -211,6 +215,8 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 						     addr:      ?,
 						     val1:      ?,
 						     val2:      ?,
+						     tag1:      ?,
+						     tag2:      ?,
 `ifdef ISA_F
 						     val3            : ?,
 						     rd_in_fpr       : ?,

@@ -8,7 +8,7 @@ package GPR_RegFile;
 // ================================================================
 // Exports
 
-export GPR_RegFile_IFC (..), mkGPR_RegFile;
+export GPR_RegFile_IFC (..), mkGPR_RegFile, RegValue (..);
 
 // ================================================================
 // BSV library imports
@@ -18,7 +18,7 @@ import RegFile      :: *;
 import FIFOF        :: *;
 import GetPut       :: *;
 import ClientServer :: *;
-
+import DefaultValue :: *;
 // BSV additional libs
 
 import GetPut_Aux :: *;
@@ -27,8 +27,23 @@ import GetPut_Aux :: *;
 // Project imports
 
 import ISA_Decls :: *;
+import TagPolicy :: *;
 
 // ================================================================
+
+typedef struct {
+   Word data;
+   TagT tag;
+} RegValue deriving (Bits,Eq, FShow);
+
+instance Literal#(RegValue);
+   function RegValue fromInteger(Integer x);
+      return RegValue { data: fromInteger(x), tag: defaultValue };
+   endfunction
+   function Bool inLiteralRange(RegValue target, Integer x);
+      return inLiteralRange(target.data, x);
+   endfunction
+endinstance
 
 interface GPR_RegFile_IFC;
    // Reset
@@ -36,15 +51,15 @@ interface GPR_RegFile_IFC;
 
    // GPR read
    (* always_ready *)
-   method Word read_rs1 (RegName rs1);
+   method RegValue read_rs1 (RegName rs1);
    (* always_ready *)
-   method Word read_rs1_port2 (RegName rs1);    // For debugger access only
+   method RegValue read_rs1_port2 (RegName rs1);    // For debugger access only
    (* always_ready *)
-   method Word read_rs2 (RegName rs2);
+   method RegValue read_rs2 (RegName rs2);
 
    // GPR write
    (* always_ready *)
-   method Action write_rd (RegName rd, Word rd_val);
+   method Action write_rd (RegName rd, RegValue rd_val);
 
 endinterface
 
@@ -66,7 +81,7 @@ module mkGPR_RegFile (GPR_RegFile_IFC);
 
    // General Purpose Registers
    // TODO: can we use Reg [0] for some other purpose?
-   RegFile #(RegName, Word) regfile <- mkRegFileFull;
+   RegFile #(RegName, RegValue) regfile <- mkRegFileFull;
 
    // ----------------------------------------------------------------
    // Reset.
@@ -119,21 +134,21 @@ module mkGPR_RegFile (GPR_RegFile_IFC);
    endinterface
 
    // GPR read
-   method Word read_rs1 (RegName rs1);
+   method RegValue read_rs1 (RegName rs1);
       return ((rs1 == 0) ? 0 : regfile.sub (rs1));
    endmethod
 
    // GPR read
-   method Word read_rs1_port2 (RegName rs1);        // For debugger access only
+   method RegValue read_rs1_port2 (RegName rs1);        // For debugger access only
       return ((rs1 == 0) ? 0 : regfile.sub (rs1));
    endmethod
 
-   method Word read_rs2 (RegName rs2);
+   method RegValue read_rs2 (RegName rs2);
       return ((rs2 == 0) ? 0 : regfile.sub (rs2));
    endmethod
 
    // GPR write
-   method Action write_rd (RegName rd, Word rd_val);
+   method Action write_rd (RegName rd, RegValue rd_val);
       if (rd != 0) regfile.upd (rd, rd_val);
    endmethod
 

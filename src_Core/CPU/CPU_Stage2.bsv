@@ -30,6 +30,7 @@ mkCPU_Stage2;
 // ================================================================
 // BSV library imports
 
+import DefaultValue :: *;
 import FIFOF        :: *;
 import GetPut       :: *;
 import ClientServer :: *;
@@ -50,6 +51,7 @@ import TV_Info       :: *;
 import CPU_Globals   :: *;
 import Near_Mem_IFC  :: *;
 import CSR_RegFile   :: *;    // For SATP, SSTATUS, MSTATUS
+import GPR_RegFile   :: *;
 
 `ifdef SHIFT_SERIAL
 import Shifter_Box  :: *;
@@ -128,9 +130,9 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 			     rd:           rg_stage2.rd,
 `ifdef ISA_D
 			     // TODO: is this ifdef necessary? Can't we always truncate?
-			     rd_val:       truncate (rg_stage2.val1)
+			     rd_val:       RegValue { data: truncate (rg_stage2.val1), tag: rg_stage2.tag1 }
 `else
-			     rd_val:       rg_stage2.val1
+			     rd_val:       RegValue { data: rg_stage2.val1, tag: rg_stage2.tag1 }
 `endif
 			     };
 
@@ -138,14 +140,15 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
    let fbypass_base = FBypass {bypass_state: BYPASS_RD_NONE,
 			       rd:           rg_stage2.rd,
 `ifdef ISA_D
-			       rd_val:       rg_stage2.val1
+			       rd_val:       rg_stage2.val1,
 `else
 `ifdef RV64
-			       rd_val:       extend (rg_stage2.val1)
+			       rd_val:       extend (rg_stage2.val1),
 `else
-			       rd_val:       rg_stage2.val1
+			       rd_val:       rg_stage2.val1,
 `endif
 `endif
+                               rd_tag:       rg_stage2.tag1
 			       };
 `endif
 
@@ -159,7 +162,8 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 `endif
 						    rd_valid:  False,
 						    rd:        rg_stage2.rd,
-						    rd_val:    rg_stage2.val1};
+						    rd_val:    rg_stage2.val1,
+						    rd_tag:    rg_stage2.tag1};
 
    let  trap_info_dmem = Trap_Info {epc:      rg_stage2.pc,
 				    exc_code: dcache.exc_code,
@@ -308,13 +312,13 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
                // Bypassing GPR value in a FD system
                else if (rg_stage2.rd != 0) begin    // TODO: is this test necessary?
 		  bypass.bypass_state = ((ostatus == OSTATUS_PIPE) ? BYPASS_RD_RDVAL : BYPASS_RD);
-		  bypass.rd_val       = result;
+		  bypass.rd_val       = RegValue { data: result, tag: defaultValue };
 	       end
 `else
                // Bypassing GPR value in a non-FD system. LD result meant for GPR
 	       if (rg_stage2.rd != 0) begin    // TODO: is this test necessary?
 		  bypass.bypass_state = ((ostatus == OSTATUS_PIPE) ? BYPASS_RD_RDVAL : BYPASS_RD);
-		  bypass.rd_val       = result;
+		  bypass.rd_val       = RegValue { data: result, tag: defaultValue };
 	       end
 `endif
 	    end
@@ -416,7 +420,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 
 	 let bypass = bypass_base;
 	 bypass.bypass_state = ((ostatus == OSTATUS_PIPE) ? BYPASS_RD_RDVAL : BYPASS_RD);
-	 bypass.rd_val       = result;
+	 bypass.rd_val       = RegValue { data: result, tag: defaultValue };
 
 	 let trace_data   = ?;
 `ifdef INCLUDE_TANDEM_VERIF
@@ -469,9 +473,9 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
             bypass.bypass_state     = ((ostatus==OSTATUS_PIPE) ? BYPASS_RD_RDVAL
                                                                : BYPASS_RD);
 `ifdef RV64
-            bypass.rd_val           = (value);
+            bypass.rd_val           = RegValue { data: value, tag: defaultValue };
 `else
-            bypass.rd_val           = truncate (value);
+            bypass.rd_val           = RegValue { data: truncate (value), tag: defaultValue };
 `endif
          end
 
