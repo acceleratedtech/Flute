@@ -27,6 +27,7 @@ import ClientServer :: *;
 import Connectable  :: *;
 import ConfigReg    :: *;
 import DefaultValue :: *;
+import Vector       :: *;
 
 // ----------------
 // BSV additional libs
@@ -80,6 +81,8 @@ import DM_CPU_Req_Rsp :: *;
 // System address map and pc_reset value
 import SoC_Map :: *;
 
+import TagMonitor :: *;
+
 // ================================================================
 // Major States of CPU
 
@@ -129,6 +132,9 @@ module mkCPU (CPU_IFC);
 `ifdef ISA_F
    FPR_RegFile_IFC  fpr_regfile  <- mkFPR_RegFile;
 `endif
+
+   Vector#(8, Bit#(XLEN)) tagScratchCSRValues = replicate(defaultValue);
+   TagMonitor#(XLEN, TagT) tagger <- mkTagMonitor(True, tagScratchCSRValues);
 
    CSR_RegFile_IFC  csr_regfile  <- mkCSR_RegFile;
    let mcycle   = csr_regfile.read_csr_mcycle;
@@ -1749,7 +1755,7 @@ module mkCPU (CPU_IFC);
       let req <- pop (f_fpr_reqs);
       Bit #(5) regname = req.address;
       let data = fpr_regfile.read_rs1_port2 (regname);
-      let rsp = DM_CPU_Rsp {ok: True, data: data};
+      let rsp = DM_CPU_Rsp {ok: True, data: data.data };
       f_fpr_rsps.enq (rsp);
       if (cur_verbosity > 1)
 	 $display ("%0d: %m.rl_debug_read_fpr: reg %0d => 0x%0h",
@@ -1760,7 +1766,7 @@ module mkCPU (CPU_IFC);
       let req <- pop (f_fpr_reqs);
       Bit #(5) regname = req.address;
       let data = req.data;
-      fpr_regfile.write_rd (regname, data);
+      fpr_regfile.write_rd (regname, RegValueFL { data: data, tag: defaultValue });
 
       let rsp = DM_CPU_Rsp {ok: True, data: ?};
       f_fpr_rsps.enq (rsp);

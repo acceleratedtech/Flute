@@ -21,6 +21,7 @@ package CPU_Globals;
 
 import ISA_Decls :: *;
 import GPR_RegFile :: *;
+import FPR_RegFile :: *;
 import TagPolicy :: *;
 import TV_Info   :: *;
 
@@ -84,8 +85,7 @@ endinstance
 typedef struct {
    Bypass_State  bypass_state;
    RegName       rd;
-   WordFL        rd_val;
-   TagT          rd_tag;
+   RegValueFL    rd_val;
    } FBypass
 deriving (Bits);
 
@@ -113,8 +113,7 @@ Bypass no_bypass = Bypass {bypass_state: BYPASS_RD_NONE,
 `ifdef ISA_F
 FBypass no_fbypass = FBypass {bypass_state: BYPASS_RD_NONE,
 			      rd: ?,
-			      rd_val: ?,
-			      rd_tag: ? };
+			      rd_val: ? };
 `endif
 
 // ----------------
@@ -134,12 +133,11 @@ endfunction
 // FBypass functions for FPRs
 // Returns '(busy, val)'
 // 'busy' means that the RegName is valid and matches, but the value is not available yet
-
-function Tuple2 #(Bool, WordFL) fn_fpr_bypass (FBypass bypass, RegName rd, WordFL rd_val);
+function Tuple2 #(Bool, RegValueFL) fn_fpr_bypass (FBypass bypass, RegName rd, RegValueFL rd_val);
    Bool busy = ((bypass.bypass_state == BYPASS_RD) && (bypass.rd == rd));
-   WordFL val= (  ((bypass.bypass_state == BYPASS_RD_RDVAL) && (bypass.rd == rd))
-		? bypass.rd_val
-		: rd_val);
+   RegValueFL val= (  ((bypass.bypass_state == BYPASS_RD_RDVAL) && (bypass.rd == rd))
+                   ? bypass.rd_val
+                   : rd_val);
    return tuple2 (busy, val);
 endfunction
 `endif
@@ -392,6 +390,7 @@ typedef struct {
 
 `ifdef ISA_F
    WordFL     val3;     // OP_Stage2_FD: arg3
+   TagT       tag3;
    Bool       rd_in_fpr;// The rd should update into FPR
    Bit #(3)   rounding_mode;    // rounding mode from fcsr_frm or instr.rm
 `endif
