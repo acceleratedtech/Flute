@@ -21,6 +21,7 @@ import FIFOF        :: *;
 import GetPut       :: *;
 import ClientServer :: *;
 import ConfigReg    :: *;
+import DefaultValue :: *;
 
 // ----------------
 // BSV additional libs
@@ -130,14 +131,14 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
    match { .fbusy1a, .frs1a } = fn_fpr_bypass (fbypass_from_stage3, rs1, frs1_val);
    match { .fbusy1b, .frs1b } = fn_fpr_bypass (fbypass_from_stage2, rs1, frs1a);
    Bool frs1_busy = (fbusy1a || fbusy1b);
-   WordFL frs1_val_bypassed = frs1b;
+   RegValueFL frs1_val_bypassed = frs1b;
 
    // FP Register rs2 read and bypass
    let frs2_val = fpr_regfile.read_rs2 (rs2);
    match { .fbusy2a, .frs2a } = fn_fpr_bypass (fbypass_from_stage3, rs2, frs2_val);
    match { .fbusy2b, .frs2b } = fn_fpr_bypass (fbypass_from_stage2, rs2, frs2a);
    Bool frs2_busy = (fbusy2a || fbusy2b);
-   WordFL frs2_val_bypassed = frs2b;
+   RegValueFL frs2_val_bypassed = frs2b;
 
    // FP Register rs3 read and bypass
    let rs3 = decoded_instr.rs3;
@@ -145,7 +146,7 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
    match { .fbusy3a, .frs3a } = fn_fpr_bypass (fbypass_from_stage3, rs3, frs3_val);
    match { .fbusy3b, .frs3b } = fn_fpr_bypass (fbypass_from_stage2, rs3, frs3a);
    Bool frs3_busy = (fbusy3a || fbusy3b);
-   WordFL frs3_val_bypassed = frs3b;
+   RegValueFL frs3_val_bypassed = frs3b;
 `endif
 
    // ALU function
@@ -162,9 +163,12 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 				rs1_tag        : rs1_val_bypassed.tag,
 				rs2_tag        : rs2_val_bypassed.tag,
 `ifdef ISA_F
-				frs1_val       : frs1_val_bypassed,
-				frs2_val       : frs2_val_bypassed,
-				frs3_val       : frs3_val_bypassed,
+				frs1_val       : frs1_val_bypassed.data,
+				frs2_val       : frs2_val_bypassed.data,
+				frs3_val       : frs3_val_bypassed.data,
+				frs1_tag       : frs1_val_bypassed.tag,
+				frs2_tag       : frs2_val_bypassed.tag,
+				frs3_tag       : frs3_val_bypassed.tag,
 				fcsr_frm       : csr_regfile.read_frm,
 `endif
 				mstatus        : csr_regfile.read_mstatus,
@@ -183,6 +187,7 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 					       tag2          : alu_outputs.tag2,
 `ifdef ISA_F
 					       val3          : alu_outputs.val3,
+					       tag3          : alu_outputs.tag3,
 					       rd_in_fpr     : alu_outputs.rd_in_fpr,
 					       rounding_mode : alu_outputs.rm,
 `endif
@@ -215,10 +220,11 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 						     addr:      ?,
 						     val1:      ?,
 						     val2:      ?,
-						     tag1:      ?,
-						     tag2:      ?,
+						     tag1:      defaultValue,
+						     tag2:      defaultValue,
 `ifdef ISA_F
 						     val3            : ?,
+						     tag3            : defaultValue,
 						     rd_in_fpr       : ?,
 						     rounding_mode   : ?,
 `endif

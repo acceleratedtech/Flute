@@ -30,6 +30,7 @@ import Vector       :: *;
 
 import ISA_Decls   :: *;
 import CPU_Globals :: *;
+import FPR_RegFile :: *;
 import TagPolicy   :: *;
 import TV_Info     :: *;
 
@@ -55,6 +56,9 @@ typedef struct {
    WordFL         frs1_val;
    WordFL         frs2_val;
    WordFL         frs3_val;
+   TagT           frs1_tag;
+   TagT           frs2_tag;
+   TagT           frs3_tag;
 `endif
    MISA           misa;
    } ALU_Inputs
@@ -105,6 +109,7 @@ typedef struct {
    TagT       tag2;     // OP_Stage2_FD: arg2 tag
 `ifdef ISA_F
    WordFL     val3;     // OP_Stage2_FD: arg3
+   TagT       tag3;
    Bool       rd_in_fpr;// result to be written to fpr
    Bit #(3)   rm;       // rounding mode
 `endif
@@ -125,6 +130,7 @@ ALU_Outputs alu_outputs_base
 	       tag2      : defaultValue,
 `ifdef ISA_F
 	       val3      : ?,
+	       tag3      : defaultValue,
 	       rd_in_fpr : False,
 	       rm        : ?,
 `endif
@@ -996,6 +1002,8 @@ function ALU_Outputs fv_FP (ALU_Inputs inputs);
                                           : extend (inputs.frs1_val);
 `endif
 `endif
+   alu_outputs.tag1      = val1_from_gpr  ? inputs.rs1_tag
+                                          : inputs.frs1_tag ;
 
    // Second and third operands (when used) are always from the FPR
 `ifdef ISA_D
@@ -1007,8 +1015,10 @@ function ALU_Outputs fv_FP (ALU_Inputs inputs);
    alu_outputs.val2      = extend (inputs.frs2_val);
 `endif
 `endif
+   alu_outputs.tag2      = inputs.frs2_tag;
 
    alu_outputs.val3      = inputs.frs3_val;
+   alu_outputs.tag3      = inputs.frs3_tag;
 
 `ifdef ISA_F
    alu_outputs.rd_in_fpr = !fv_is_rd_in_GPR (funct7, rs2);

@@ -8,7 +8,7 @@ package FPR_RegFile;
 // ================================================================
 // Exports
 
-export FPR_RegFile_IFC (..), mkFPR_RegFile;
+export FPR_RegFile_IFC (..), mkFPR_RegFile, RegValueFL(..);
 
 // ================================================================
 // BSV library imports
@@ -18,6 +18,7 @@ import RegFile      :: *;
 import FIFOF        :: *;
 import GetPut       :: *;
 import ClientServer :: *;
+import DefaultValue :: *;
 
 // BSV additional libs
 
@@ -27,8 +28,23 @@ import GetPut_Aux :: *;
 // Project imports
 
 import ISA_Decls :: *;
+import TagPolicy :: *;
 
 // ================================================================
+
+typedef struct {
+   Word data;
+   TagT tag;
+} RegValueFL deriving (Bits,Eq, FShow);
+
+instance Literal#(RegValueFL);
+   function RegValueFL fromInteger(Integer x);
+      return RegValueFL { data: fromInteger(x), tag: defaultValue };
+   endfunction
+   function Bool inLiteralRange(RegValueFL target, Integer x);
+      return inLiteralRange(target.data, x);
+   endfunction
+endinstance
 
 interface FPR_RegFile_IFC;
    // Reset
@@ -36,17 +52,17 @@ interface FPR_RegFile_IFC;
 
    // FPR read
    (* always_ready *)
-   method WordFL read_rs1 (RegName rs1);
+   method RegValueFL read_rs1 (RegName rs1);
    (* always_ready *)
-   method WordFL read_rs1_port2 (RegName rs1);    // For debugger access only
+   method RegValueFL read_rs1_port2 (RegName rs1);    // For debugger access only
    (* always_ready *)
-   method WordFL read_rs2 (RegName rs2);
+   method RegValueFL read_rs2 (RegName rs2);
    (* always_ready *)
-   method WordFL read_rs3 (RegName rs3);
+   method RegValueFL read_rs3 (RegName rs3);
 
    // FPR write
    (* always_ready *)
-   method Action write_rd (RegName rd, WordFL rd_val);
+   method Action write_rd (RegName rd, RegValueFL rd_val);
 
 endinterface
 
@@ -68,7 +84,7 @@ module mkFPR_RegFile (FPR_RegFile_IFC);
 
    // Floating Point Registers
    // Unlike GPRs, all registers in the FPR are regular registers (no r0)
-   RegFile #(RegName, WordFL) regfile <- mkRegFileFull;
+   RegFile #(RegName, RegValueFL) regfile <- mkRegFileFull;
 
    // ----------------------------------------------------------------
    // Reset.
@@ -121,25 +137,25 @@ module mkFPR_RegFile (FPR_RegFile_IFC);
    endinterface
 
    // FPR read
-   method WordFL read_rs1 (RegName rs1);
+   method RegValueFL read_rs1 (RegName rs1);
       return (regfile.sub (rs1));
    endmethod
 
    // FPR read
-   method WordFL read_rs1_port2 (RegName rs1);        // For debugger access only
+   method RegValueFL read_rs1_port2 (RegName rs1);        // For debugger access only
       return (regfile.sub (rs1));
    endmethod
 
-   method WordFL read_rs2 (RegName rs2);
+   method RegValueFL read_rs2 (RegName rs2);
       return (regfile.sub (rs2));
    endmethod
 
-   method WordFL read_rs3 (RegName rs3);
+   method RegValueFL read_rs3 (RegName rs3);
       return (regfile.sub (rs3));
    endmethod
 
    // FPR write
-   method Action write_rd (RegName rd, WordFL rd_val);
+   method Action write_rd (RegName rd, RegValueFL rd_val);
       regfile.upd (rd, rd_val);
    endmethod
 

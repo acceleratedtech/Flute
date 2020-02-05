@@ -52,6 +52,7 @@ import CPU_Globals   :: *;
 import Near_Mem_IFC  :: *;
 import CSR_RegFile   :: *;    // For SATP, SSTATUS, MSTATUS
 import GPR_RegFile   :: *;
+import FPR_RegFile   :: *;
 
 `ifdef SHIFT_SERIAL
 import Shifter_Box  :: *;
@@ -140,15 +141,14 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
    let fbypass_base = FBypass {bypass_state: BYPASS_RD_NONE,
 			       rd:           rg_stage2.rd,
 `ifdef ISA_D
-			       rd_val:       rg_stage2.val1,
+			       rd_val:       RegValueFL { data: rg_stage2.val1,          tag: rg_stage2.tag1 }
 `else
 `ifdef RV64
-			       rd_val:       extend (rg_stage2.val1),
+			       rd_val:       RegValueFL { data: extend (rg_stage2.val1), tag: rg_stage2.tag1 }
 `else
-			       rd_val:       rg_stage2.val1,
+			       rd_val:       RegValueFL { data: rg_stage2.val1,          tag: rg_stage2.tag1 }
 `endif
 `endif
-                               rd_tag:       rg_stage2.tag1
 			       };
 `endif
 
@@ -306,7 +306,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
                // to stage3
                if (upd_fpr) begin
 		  fbypass.bypass_state = ((ostatus == OSTATUS_PIPE) ? BYPASS_RD_RDVAL : BYPASS_RD);
-		  fbypass.rd_val       = data_to_stage3.rd_val;
+		  fbypass.rd_val       = RegValueFL { data: data_to_stage3.rd_val, tag: data_to_stage3.rd_tag };
                end
 
                // Bypassing GPR value in a FD system
@@ -462,7 +462,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
             fbypass.bypass_state    = ((ostatus==OSTATUS_PIPE) ? BYPASS_RD_RDVAL
                                                                : BYPASS_RD);
 `ifdef ISA_D
-            fbypass.rd_val          = value;
+            fbypass.rd_val          = RegValueFL { data: value, tag: defaultValue };
 `else
             fbypass.rd_val          = truncate (value);
 `endif
