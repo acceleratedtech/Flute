@@ -419,6 +419,18 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 
     // </SANCTUM>
 
+    // <Tagging>
+    Reg#(WordXL) rg_tagctrl <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch0 <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch1 <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch2 <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch3 <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch4 <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch5 <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch6 <- mkReg(0);
+    Reg#(WordXL) rg_tagscratch7 <- mkReg(0);
+    // </Tagging>
+
    // ----------------------------------------------------------------
    // Reset.
    // Initialize some CSRs.
@@ -498,6 +510,18 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
       rg_meparmask <= 0;
       // </SANCTUM>
 
+      // <Tagging>
+      rg_tagctrl <= 0;
+      rg_tagscratch0 <= 0;
+      rg_tagscratch1 <= 0;
+      rg_tagscratch2 <= 0;
+      rg_tagscratch3 <= 0;
+      rg_tagscratch4 <= 0;
+      rg_tagscratch5 <= 0;
+      rg_tagscratch6 <= 0;
+      rg_tagscratch7 <= 0;
+      // </Tagging>
+
    endrule
 
    // ----------------------------------------------------------------
@@ -537,132 +561,142 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 
    function Bool fv_csr_exists (CSR_Addr csr_addr);
       Bool result = (   ((csr_addr_hpmcounter3 <= csr_addr) && (csr_addr <= csr_addr_hpmcounter31))
-		     || ((csr_addr_mhpmcounter3 <= csr_addr) && (csr_addr <= csr_addr_mhpmcounter31))
+                     || ((csr_addr_mhpmcounter3 <= csr_addr) && (csr_addr <= csr_addr_mhpmcounter31))
 `ifdef RV32
-		     || ((csr_addr_hpmcounter3h <= csr_addr) && (csr_addr <= csr_addr_hpmcounter31h))
-		     || ((csr_addr_mhpmcounter3h <= csr_addr) && (csr_addr <= csr_addr_mhpmcounter31h))
+                     || ((csr_addr_hpmcounter3h <= csr_addr) && (csr_addr <= csr_addr_hpmcounter31h))
+                     || ((csr_addr_mhpmcounter3h <= csr_addr) && (csr_addr <= csr_addr_mhpmcounter31h))
 `endif
-		     || ((csr_addr_mhpmevent3 <= csr_addr) && (csr_addr <= csr_addr_mhpmevent31))
+                     || ((csr_addr_mhpmevent3 <= csr_addr) && (csr_addr <= csr_addr_mhpmevent31))
 
-		     // User mode csrs
+                     // User mode csrs
 `ifdef ISA_F
-		     || (csr_addr == csr_addr_fflags)
-		     || (csr_addr == csr_addr_frm)
-		     || (csr_addr == csr_addr_fcsr)
+                     || (csr_addr == csr_addr_fflags)
+                     || (csr_addr == csr_addr_frm)
+                     || (csr_addr == csr_addr_fcsr)
 `endif
-		     || (csr_addr == csr_addr_cycle)
+                     || (csr_addr == csr_addr_cycle)
 
-		     /*
-		     // NOTE: CSR_TIME should be a 'shadow copy' of the MTIME
-		     // mem-mapped location; but since both increment at the
-		     // same rate, and MTIME is never written, this is ok.
+                     /*
+                     // NOTE: CSR_TIME should be a 'shadow copy' of the MTIME
+                     // mem-mapped location; but since both increment at the
+                     // same rate, and MTIME is never written, this is ok.
 
-		     || (csr_addr == csr_addr_time)
-		     */
+                     || (csr_addr == csr_addr_time)
+                     */
 
-		     || (csr_addr == csr_addr_instret)
+                     || (csr_addr == csr_addr_instret)
 `ifdef RV32
-		     || (csr_addr == csr_addr_cycleh)
-		     || (csr_addr == csr_addr_timeh)
-		     || (csr_addr == csr_addr_instreth)
+                     || (csr_addr == csr_addr_cycleh)
+                     || (csr_addr == csr_addr_timeh)
+                     || (csr_addr == csr_addr_instreth)
 `endif
 
 `ifdef ISA_PRIV_S
-		     // Supervisor mode csrs
-		     || (csr_addr == csr_addr_sstatus)
-		     || (csr_addr == csr_addr_sedeleg)
-		     || (csr_addr == csr_addr_sideleg)
-		     || (csr_addr == csr_addr_sie)
-		     || (csr_addr == csr_addr_stvec)
-		     || (csr_addr == csr_addr_scounteren)
+                     // Supervisor mode csrs
+                     || (csr_addr == csr_addr_sstatus)
+                     || (csr_addr == csr_addr_sedeleg)
+                     || (csr_addr == csr_addr_sideleg)
+                     || (csr_addr == csr_addr_sie)
+                     || (csr_addr == csr_addr_stvec)
+                     || (csr_addr == csr_addr_scounteren)
 
-		     || (csr_addr == csr_addr_sscratch)
-		     || (csr_addr == csr_addr_sepc)
-		     || (csr_addr == csr_addr_scause)
-		     || (csr_addr == csr_addr_stval)
-		     || (csr_addr == csr_addr_sip)
+                     || (csr_addr == csr_addr_sscratch)
+                     || (csr_addr == csr_addr_sepc)
+                     || (csr_addr == csr_addr_scause)
+                     || (csr_addr == csr_addr_stval)
+                     || (csr_addr == csr_addr_sip)
 
-		     || (csr_addr == csr_addr_satp)
+                     || (csr_addr == csr_addr_satp)
 
-		     || (csr_addr == csr_addr_medeleg)
-		     || (csr_addr == csr_addr_mideleg)
+                     || (csr_addr == csr_addr_medeleg)
+                     || (csr_addr == csr_addr_mideleg)
 `endif
 
-		     // Machine mode csrs
-		     || (csr_addr == csr_addr_mvendorid)
-		     || (csr_addr == csr_addr_marchid)
-		     || (csr_addr == csr_addr_mimpid)
-		     || (csr_addr == csr_addr_mhartid)
+                     // Machine mode csrs
+                     || (csr_addr == csr_addr_mvendorid)
+                     || (csr_addr == csr_addr_marchid)
+                     || (csr_addr == csr_addr_mimpid)
+                     || (csr_addr == csr_addr_mhartid)
 
-		     || (csr_addr == csr_addr_mstatus)
-		     || (csr_addr == csr_addr_misa)
-		     || (csr_addr == csr_addr_mie)
-		     || (csr_addr == csr_addr_mtvec)
-		     || (csr_addr == csr_addr_mcounteren)
+                     || (csr_addr == csr_addr_mstatus)
+                     || (csr_addr == csr_addr_misa)
+                     || (csr_addr == csr_addr_mie)
+                     || (csr_addr == csr_addr_mtvec)
+                     || (csr_addr == csr_addr_mcounteren)
 
-		     || (csr_addr == csr_addr_mscratch)
-		     || (csr_addr == csr_addr_mepc)
-		     || (csr_addr == csr_addr_mcause)
-		     || (csr_addr == csr_addr_mtval)
-		     || (csr_addr == csr_addr_mip)
+                     || (csr_addr == csr_addr_mscratch)
+                     || (csr_addr == csr_addr_mepc)
+                     || (csr_addr == csr_addr_mcause)
+                     || (csr_addr == csr_addr_mtval)
+                     || (csr_addr == csr_addr_mip)
 
-		     // TODO: Phys Mem Protection regs
-		     // (csr_addr == csr_pmpcfg0)
-		     // (csr_addr == csr_pmpcfg1)
-		     // (csr_addr == csr_pmpcfg2)
-		     // (csr_addr == csr_pmpcfg3)
+                     // TODO: Phys Mem Protection regs
+                     // (csr_addr == csr_pmpcfg0)
+                     // (csr_addr == csr_pmpcfg1)
+                     // (csr_addr == csr_pmpcfg2)
+                     // (csr_addr == csr_pmpcfg3)
 
-		     // (csr_addr == csr_pmpaddr0)
-		     // (csr_addr == csr_pmpaddr1)
-		     // (csr_addr == csr_pmpaddr2)
-		     // (csr_addr == csr_pmpaddr3)
-		     // (csr_addr == csr_pmpaddr4)
-		     // (csr_addr == csr_pmpaddr5)
-		     // (csr_addr == csr_pmpaddr6)
-		     // (csr_addr == csr_pmpaddr7)
-		     // (csr_addr == csr_pmpaddr8)
-		     // (csr_addr == csr_pmpaddr9)
-		     // (csr_addr == csr_pmpaddr10)
-		     // (csr_addr == csr_pmpaddr11)
-		     // (csr_addr == csr_pmpaddr12)
-		     // (csr_addr == csr_pmpaddr13)
-		     // (csr_addr == csr_pmpaddr14)
-		     // (csr_addr == csr_pmpaddr15)
+                     // (csr_addr == csr_pmpaddr0)
+                     // (csr_addr == csr_pmpaddr1)
+                     // (csr_addr == csr_pmpaddr2)
+                     // (csr_addr == csr_pmpaddr3)
+                     // (csr_addr == csr_pmpaddr4)
+                     // (csr_addr == csr_pmpaddr5)
+                     // (csr_addr == csr_pmpaddr6)
+                     // (csr_addr == csr_pmpaddr7)
+                     // (csr_addr == csr_pmpaddr8)
+                     // (csr_addr == csr_pmpaddr9)
+                     // (csr_addr == csr_pmpaddr10)
+                     // (csr_addr == csr_pmpaddr11)
+                     // (csr_addr == csr_pmpaddr12)
+                     // (csr_addr == csr_pmpaddr13)
+                     // (csr_addr == csr_pmpaddr14)
+                     // (csr_addr == csr_pmpaddr15)
 
-		     || (csr_addr == csr_addr_mcycle)
-		     || (csr_addr == csr_addr_minstret)
+                     || (csr_addr == csr_addr_mcycle)
+                     || (csr_addr == csr_addr_minstret)
 `ifdef RV32
-		     || (csr_addr == csr_addr_mcycleh)
-		     || (csr_addr == csr_addr_minstreth)
+                     || (csr_addr == csr_addr_mcycleh)
+                     || (csr_addr == csr_addr_minstreth)
 `endif
 
-		     || (csr_addr == csr_addr_tselect)
-		     || (csr_addr == csr_addr_tdata1)
-		     || (csr_addr == csr_addr_tdata2)
-		     || (csr_addr == csr_addr_tdata3)
+                     || (csr_addr == csr_addr_tselect)
+                     || (csr_addr == csr_addr_tdata1)
+                     || (csr_addr == csr_addr_tdata2)
+                     || (csr_addr == csr_addr_tdata3)
 
 `ifdef INCLUDE_GDB_CONTROL
-		     || (csr_addr == csr_addr_dcsr)
-		     || (csr_addr == csr_addr_dpc)
-		     || (csr_addr == csr_addr_dscratch0)
-		     || (csr_addr == csr_addr_dscratch1)
+                     || (csr_addr == csr_addr_dcsr)
+                     || (csr_addr == csr_addr_dpc)
+                     || (csr_addr == csr_addr_dscratch0)
+                     || (csr_addr == csr_addr_dscratch1)
 `endif
-	             // <SANCTUM>
-		     || (csr_addr ==  csr_addr_mevbase)
-		     || (csr_addr ==  csr_addr_mevmask)
+                     // <SANCTUM>
+                     || (csr_addr ==  csr_addr_mevbase)
+                     || (csr_addr ==  csr_addr_mevmask)
 
-		     || (csr_addr ==  csr_addr_meatp)
+                     || (csr_addr ==  csr_addr_meatp)
 
-		     || (csr_addr ==  csr_addr_mmrbm)
-		     || (csr_addr ==  csr_addr_memrbm)
+                     || (csr_addr ==  csr_addr_mmrbm)
+                     || (csr_addr ==  csr_addr_memrbm)
 
-		     || (csr_addr ==  csr_addr_mparbase)
-		     || (csr_addr ==  csr_addr_mparmask)
-		     || (csr_addr ==  csr_addr_meparbase)
-		     || (csr_addr ==  csr_addr_meparmask)
+                     || (csr_addr ==  csr_addr_mparbase)
+                     || (csr_addr ==  csr_addr_mparmask)
+                     || (csr_addr ==  csr_addr_meparbase)
+                     || (csr_addr ==  csr_addr_meparmask)
                      // </SANCTUM>
-
-	 );
+                     // <TAGGING>
+                     || (csr_addr == csr_addr_tagctrl)
+                     || (csr_addr == csr_addr_tagscratch0)
+                     || (csr_addr == csr_addr_tagscratch1)
+                     || (csr_addr == csr_addr_tagscratch2)
+                     || (csr_addr == csr_addr_tagscratch3)
+                     || (csr_addr == csr_addr_tagscratch4)
+                     || (csr_addr == csr_addr_tagscratch5)
+                     || (csr_addr == csr_addr_tagscratch6)
+                     || (csr_addr == csr_addr_tagscratch7)
+                     // </TAGGING>
+         );
       return result;
    endfunction: fv_csr_exists
 
@@ -766,6 +800,18 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
             csr_addr_meparbase:  m_csr_value = tagged Valid rg_meparbase;
             csr_addr_meparmask:  m_csr_value = tagged Valid rg_meparmask;
             // </SANCTUM>
+
+	    // <Tagging>
+	    csr_addr_tagctrl: m_csr_value = tagged Valid rg_tagctrl;
+	    csr_addr_tagscratch0: m_csr_value = tagged Valid rg_tagscratch0;
+	    csr_addr_tagscratch1: m_csr_value = tagged Valid rg_tagscratch1;
+	    csr_addr_tagscratch2: m_csr_value = tagged Valid rg_tagscratch2;
+	    csr_addr_tagscratch3: m_csr_value = tagged Valid rg_tagscratch3;
+	    csr_addr_tagscratch4: m_csr_value = tagged Valid rg_tagscratch4;
+	    csr_addr_tagscratch5: m_csr_value = tagged Valid rg_tagscratch5;
+	    csr_addr_tagscratch6: m_csr_value = tagged Valid rg_tagscratch6;
+	    csr_addr_tagscratch7: m_csr_value = tagged Valid rg_tagscratch7;
+	    // </Tagging>
 
 	    // TODO: Phys Mem Protection regs
 	    // csr_pmpcfg0:   m_csr_value = tagged Valid rf_pmpcfg.sub (0);
@@ -948,6 +994,55 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 				       rg_mevmask <= result;
 				       $display("Updating mevmask: %h", result);
 				    end
+               // <Tagging>
+	       csr_addr_tagctrl:    begin
+	                               result   = wordxl;
+				       rg_tagctrl <= result;
+				       $display("Updating tagctrl: %h", result);
+				    end
+               csr_addr_tagscratch0: begin
+	                                 result   = wordxl;
+					 rg_tagscratch0 <= result;
+					 $display("Updating tagscratch0: %h", result);
+			             end
+               csr_addr_tagscratch1: begin
+	                                 result   = wordxl;
+					 rg_tagscratch1 <= result;
+					 $display("Updating tagscratch1: %h", result);
+			             end
+               csr_addr_tagscratch2: begin
+	                                 result   = wordxl;
+					 rg_tagscratch2 <= result;
+					 $display("Updating tagscratch2: %h", result);
+			             end
+               csr_addr_tagscratch3: begin
+	                                 result   = wordxl;
+					 rg_tagscratch3 <= result;
+					 $display("Updating tagscratch3: %h", result);
+			             end
+               csr_addr_tagscratch4: begin
+	                                 result   = wordxl;
+					 rg_tagscratch4 <= result;
+					 $display("Updating tagscratch4: %h", result);
+			             end
+               csr_addr_tagscratch5: begin
+	                                 result   = wordxl;
+					 rg_tagscratch5 <= result;
+					 $display("Updating tagscratch5: %h", result);
+			             end
+               csr_addr_tagscratch6: begin
+	                                 result   = wordxl;
+					 rg_tagscratch6 <= result;
+					 $display("Updating tagscratch6: %h", result);
+			             end
+               csr_addr_tagscratch7: begin
+	                                 result   = wordxl;
+					 rg_tagscratch7 <= result;
+					 $display("Updating tagscratch7: %h", result);
+			             end
+               // </Tagging>
+				    
+
 `endif
 
 	       // Machine mode

@@ -1104,6 +1104,18 @@ CSR_Addr   csr_addr_meparbase     = 12'h7c7;     // Upper 32 bits of performance
 CSR_Addr   csr_addr_meparmask     = 12'h7c8;     // Upper 32 bits of performance-monitoring counter
 // </SANCTUM>
 
+// <Tagging>
+CSR_Addr   csr_addr_tagctrl       = 12'h802;     // Enable tagging policy
+CSR_Addr   csr_addr_tagscratch0   = 12'h810;     // Tagging policy register 0
+CSR_Addr   csr_addr_tagscratch1   = 12'h811;     // Tagging policy register 1
+CSR_Addr   csr_addr_tagscratch2   = 12'h812;     // Tagging policy register 2
+CSR_Addr   csr_addr_tagscratch3   = 12'h813;     // Tagging policy register 3
+CSR_Addr   csr_addr_tagscratch4   = 12'h814;     // Tagging policy register 4
+CSR_Addr   csr_addr_tagscratch5   = 12'h815;     // Tagging policy register 5
+CSR_Addr   csr_addr_tagscratch6   = 12'h816;     // Tagging policy register 6
+CSR_Addr   csr_addr_tagscratch7   = 12'h817;     // Tagging policy register 7
+// </Tagging>
+
 // Information from the CSR on a new trap. 
 typedef struct {
    Addr        pc;
