@@ -5,7 +5,7 @@ import TagPolicy::*;
 
 import ISA_Decls :: *;
 
-export TagMonitor, mkTagMonitor, TagT(..);
+export TagMonitor, mkTagMonitor, TagT(..), TaggedData(..);
 
 typedef Struct2 TagT;
 typedef Struct3 ArgsAndCsrs;
@@ -101,16 +101,33 @@ module mkTagMonitor#(Bool tagActive, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMonitor#
 	return newtag;
     endmethod
     method Bool  is_legal_load_address( TaggedData#(XLEN, TagT) addr, Bit#(XLEN) pc );
-       //FIXME
-       return False;
+        StructEx a = StructEx { a: tagActive,
+	                        aa: tagCSRs[0],     aaa:     tagCSRs[1],     aaaa: tagCSRs[2], aaaaa:     tagCSRs[3],
+	                        aaaaaa: tagCSRs[4], aaaaaaa: tagCSRs[5], aaaaaaaa: tagCSRs[6], aaaaaaaaa: tagCSRs[7] };
+        Struct7 args = Struct7 { a:     a,
+	                         aaaa:  Struct4 { data: addr.data, tag: addr.tag },
+				 aaaaa: pc };
+        Bool is_legal = policy.is_legal_load_address(args);
+        return is_legal;
     endmethod
     method Bool  is_legal_store_address( TaggedData#(XLEN, TagT) addr, Bit#(XLEN) pc );
-       //FIXME
-       return False;
+        StructEx a = StructEx { a: tagActive,
+	                        aa: tagCSRs[0],     aaa:     tagCSRs[1],     aaaa: tagCSRs[2], aaaaa:     tagCSRs[3],
+	                        aaaaaa: tagCSRs[4], aaaaaaa: tagCSRs[5], aaaaaaaa: tagCSRs[6], aaaaaaaaa: tagCSRs[7] };
+        Struct7 args = Struct7 { a:     a,
+	                         aaaa:  Struct4 { data: addr.data, tag: addr.tag },
+				 aaaaa: pc };
+        Bool is_legal = policy.is_legal_store_address(args);
+        return is_legal;
     endmethod
     method Bool  is_legal_next_pc( TaggedData#(XLEN, TagT) next_pc );
-       //FIXME
-       return False;
+        StructEx a = StructEx { a: tagActive,
+	                        aa: tagCSRs[0],     aaa:     tagCSRs[1],     aaaa: tagCSRs[2], aaaaa:     tagCSRs[3],
+	                        aaaaaa: tagCSRs[4], aaaaaaa: tagCSRs[5], aaaaaaaa: tagCSRs[6], aaaaaaaaa: tagCSRs[7] };
+        Struct6 args = Struct6 { a:     a,
+	                         aaaa:  Struct4 { data: next_pc.data, tag: next_pc.tag } };
+        Bool is_legal = policy.is_legal_next_pc(args);
+        return is_legal;
     endmethod
 
     method TagT default_tag_op( TaggedData#(XLEN, TagT) v1, TaggedData#(XLEN, TagT) v2, Bit#(XLEN) result );

@@ -67,6 +67,8 @@ import FBox_Top    :: *;
 import FBox_Core   :: *;   // For fv_nanbox function
 `endif
 
+import TagMonitor  :: *;
+
 // ================================================================
 // Interface
 
@@ -94,7 +96,8 @@ endinterface
 
 module mkCPU_Stage2 #(Bit #(4)         verbosity,
 		      CSR_RegFile_IFC  csr_regfile,    // for SATP and SSTATUS: TODO carry in Data_Stage1_to_Stage2
-		      DMem_IFC         dcache)
+		      DMem_IFC         dcache,
+		      TagMonitor#(XLEN, TagT) tagger)
                     (CPU_Stage2_IFC);
 
    FIFOF #(Token) f_reset_reqs <- mkFIFOF;
@@ -108,7 +111,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
    // Serial shifter box
 
 `ifdef SHIFT_SERIAL
-   Shifter_Box_IFC shifter_box <- mkShifter_Box;
+   Shifter_Box_IFC shifter_box <- mkShifter_Box(tagger);
 `endif
 
    // ----------------
@@ -263,17 +266,23 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
             // A FPR load
             if (rg_stage2.rd_in_fpr) begin
                // A FLW result
-               if (funct3 == f3_FLW)
+               if (funct3 == f3_FLW) begin
 `ifdef ISA_D
                   // needs nan-boxing when destined for a DP register file
-                  data_to_stage3.rd_val = fv_nanbox (dcache.word64);
+		  result = fv_nanbox (dcache.word64);
+                  data_to_stage3.rd_val = result;
 `else
                   data_to_stage3.rd_val = result;
 `endif
                // A FLD result
-               else
+               end
+	       else begin
                   data_to_stage3.rd_val = dcache.word64;
+               end
+
+	       data_to_stage3.rd_tag = tagger.unknown_tag(data_to_stage3.rd_val);
             end
+
 
             // A GPR load in a FD system
             else
@@ -287,6 +296,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
             // A GPR load in a non-FD system
 	    data_to_stage3.rd_val   = result;
 `endif
+	    data_to_stage3.rd_tag = tagger.unknown_tag(data_to_stage3.rd_val);
 
             // Update the bypass channel, if not trapping (NONPIPE)
 	    let bypass = bypass_base;
@@ -373,6 +383,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 	 data_to_stage3.rd_valid = (ostatus == OSTATUS_PIPE);
 	 data_to_stage3.rd       = 0;
 	 data_to_stage3.rd_val   = ?;
+         data_to_stage3.rd_tag = defaultValue;
 
 	 let trace_data   = ?;
 `ifdef INCLUDE_TANDEM_VERIF
@@ -395,6 +406,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 	 let ostatus = ((! shifter_box.valid) ? OSTATUS_BUSY : OSTATUS_PIPE);
 
 	 let result = shifter_box.word;
+	 let tag    = shifter_box.tag;
 
 	 let data_to_stage3 = data_to_stage3_base;
 	 data_to_stage3.rd_valid = (ostatus == OSTATUS_PIPE);
@@ -403,6 +415,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 `else
 	 data_to_stage3.rd_val   = result;
 `endif
+	 data_to_stage3.rd_tag   = tag;
 
 	 let bypass = bypass_base;
 	 bypass.bypass_state = ((ostatus == OSTATUS_PIPE) ? BYPASS_RD_RDVAL : BYPASS_RD);
@@ -431,6 +444,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 	 let ostatus = ((! mbox.valid) ? OSTATUS_BUSY : OSTATUS_PIPE);
 
 	 let result = mbox.word;
+	 let tag = tagger.default_tag_op(TaggedData { data: ?, tag: defaultValue }, TaggedData { data: ?, tag: defaultValue }, result);
 
 	 let data_to_stage3 = data_to_stage3_base;
 	 data_to_stage3.rd_valid = (ostatus == OSTATUS_PIPE);
@@ -439,6 +453,7 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 `else
 	 data_to_stage3.rd_val   = result;
 `endif
+	 data_to_stage3.rd_tag   = tag;
 
 	 let bypass = bypass_base;
 	 bypass.bypass_state = ((ostatus == OSTATUS_PIPE) ? BYPASS_RD_RDVAL : BYPASS_RD);
@@ -468,6 +483,8 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 
          // Extract fields from FBOX result
 	 match {.value, .fflags} = fbox.word;
+	 let tag = tagger.default_tag_op(TaggedData { data: ?, tag: defaultValue }, TaggedData { data: ?, tag: defaultValue }, value);
+
          let upd_fpr             = rg_stage2.rd_in_fpr;
 
 	 let data_to_stage3      = data_to_stage3_base;
