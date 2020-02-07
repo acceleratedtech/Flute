@@ -46,6 +46,8 @@ import EX_ALU_functions :: *;
 import CPU_Decode_C     :: *;
 `endif
 
+import TagMonitor       :: *;
+
 // ================================================================
 // Interface
 
@@ -82,7 +84,8 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 `endif
 		      CSR_RegFile_IFC  csr_regfile,
 		      Epoch            cur_epoch,
-		      Priv_Mode        cur_priv)
+		      Priv_Mode        cur_priv,
+		      TagMonitor#(XLEN, TagT) tagger)
                     (CPU_Stage1_IFC);
 
    FIFOF #(Token) f_reset_reqs <- mkFIFOF;
@@ -174,7 +177,7 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 				mstatus        : csr_regfile.read_mstatus,
 				misa           : csr_regfile.read_misa };
 
-   let alu_outputs = fv_ALU (alu_inputs);
+   let alu_outputs = fv_ALU (alu_inputs, tagger);
 
    let data_to_stage2 = Data_Stage1_to_Stage2 {pc            : rg_stage_input.pc,
 					       instr         : rg_stage_input.instr,

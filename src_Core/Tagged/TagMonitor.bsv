@@ -24,7 +24,7 @@ typedef Struct2 TagT;
 typedef Struct3 ArgsAndCsrs;
 typedef Module2 Policy;
 
-module mkTagMonitor#(Bit#(XLEN) tagctrl, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMonitor#(XLEN, Struct2));
+module mkTagMonitor#(Bit#(XLEN) tagctrl, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMonitor#(XLEN, TagT));
 `ifdef OVERFLOW_POLICY
     let tp <- mkOverflowPolicy();
 `endif

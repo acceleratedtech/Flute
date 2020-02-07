@@ -215,7 +215,8 @@ module mkCPU (CPU_IFC);
 `endif
 					   csr_regfile,
 					   rg_epoch,
-					   rg_cur_priv);
+					   rg_cur_priv,
+					   tagger);
 
    CPU_StageD_IFC  stageD <- mkCPU_StageD (cur_verbosity, misa);
 

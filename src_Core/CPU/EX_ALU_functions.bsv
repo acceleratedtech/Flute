@@ -218,7 +218,7 @@ endfunction
 // ================================================================
 // BRANCH
 
-function ALU_Outputs fv_BRANCH (ALU_Inputs inputs);
+function ALU_Outputs fv_BRANCH (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let rs1_val = inputs.rs1_val;
    let rs2_val = inputs.rs2_val;
 
@@ -257,6 +257,7 @@ function ALU_Outputs fv_BRANCH (ALU_Inputs inputs);
    alu_outputs.exc_code  = exc_code;
    alu_outputs.op_stage2 = OP_Stage2_ALU;
    alu_outputs.rd        = 0;
+   //FIXME: should there be a tag with this?
    alu_outputs.addr      = next_pc;
 `ifdef ISA_D
    // TODO: is this ifdef needed? Can't we always use 'extend()'?
@@ -275,7 +276,7 @@ endfunction
 // ----------------------------------------------------------------
 // JAL
 
-function ALU_Outputs fv_JAL (ALU_Inputs inputs);
+function ALU_Outputs fv_JAL (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    IntXL offset  = extend (unpack (inputs.decoded_instr.imm21_UJ));
    Addr  next_pc = pack (unpack (inputs.pc) + offset);
    Addr  ret_pc  = fall_through_pc (inputs);
@@ -296,7 +297,7 @@ function ALU_Outputs fv_JAL (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = ret_pc;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = tagger.pc_tag(ret_pc);
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (next_pc,
 					  fv_trace_isize (inputs),
@@ -309,7 +310,7 @@ endfunction
 // ----------------------------------------------------------------
 // JALR
 
-function ALU_Outputs fv_JALR (ALU_Inputs inputs);
+function ALU_Outputs fv_JALR (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let rs1_val = inputs.rs1_val;
    let rs2_val = inputs.rs2_val;
 
@@ -339,7 +340,7 @@ function ALU_Outputs fv_JALR (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = ret_pc;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = tagger.pc_tag(ret_pc);
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (next_pc,
@@ -356,7 +357,7 @@ endfunction
 // ----------------
 // Shifts (funct3 == f3_SLLI/ f3_SRLI/ f3_SRAI)
 
-function ALU_Outputs fv_OP_and_OP_IMM_shifts (ALU_Inputs inputs);
+function ALU_Outputs fv_OP_and_OP_IMM_shifts (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let rs1_val = inputs.rs1_val;
    let rs2_val = inputs.rs2_val;
 
@@ -367,36 +368,47 @@ function ALU_Outputs fv_OP_and_OP_IMM_shifts (ALU_Inputs inputs);
 				: truncate (rs2_val));
 
    WordXL   rd_val    = ?;
+   TagT     rd_tag    = defaultValue;
    let      funct3    = inputs.decoded_instr.funct3;
    Bit #(1) instr_b30 = inputs.instr [30];
 
 `ifdef SHIFT_BARREL
    // Shifts implemented by Verilog synthesis,
    // mapping to barrel shifters
-   if (funct3 == f3_SLLI)
+   if (funct3 == f3_SLLI) begin
       rd_val = (rs1_val << shamt);
+      rd_tag = tagger.alu_sll(TaggedData {data: rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val );
+   end
    else begin // assert: (funct3 == f3_SRxI)
-      if (instr_b30 == 1'b0)
+      if (instr_b30 == 1'b0) begin
 	 // SRL/SRLI
 	 rd_val = (rs1_val >> shamt);
-      else
+	 rd_tag = tagger.alu_srl(TaggedData {data: rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val );
+      end
+      else begin
 	 // SRA/SRAI
 	 rd_val = pack (s_rs1_val >> shamt);
+	 rd_tag = tagger.alu_sra(TaggedData {data: rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val );
+      end
    end
 `endif
 
 `ifdef SHIFT_MULT
    // Shifts implemented using multiplication by 2^shamt,
    // mapping to DSPs in FPGA
-   if (funct3 == f3_SLLI)
+   if (funct3 == f3_SLLI) begin
       rd_val = fn_shl (rs1_val, shamt);  // in LUTRAMs/DSPs
+      rd_tag = tagger.alu_sll(TaggedData {data: rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val );
+   end
    else begin // assert: (funct3 == f3_SRxI)
       if (instr_b30 == 1'b0) begin
 	 // SRL/SRLI
 	 rd_val = fn_shrl (rs1_val, shamt);  // in LUTRAMs/DSPs
+	 rd_tag = tagger.alu_srl(TaggedData {data: rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val );
       else
 	 // SRA/SRAI
 	 rd_val = fn_shra (rs1_val, shamt);     // in LUTRAMs/DSPs
+	 rd_tag = tagger.alu_sra(TaggedData {data: rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val );
    end
 `endif
 
@@ -414,12 +426,12 @@ function ALU_Outputs fv_OP_and_OP_IMM_shifts (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = rd_tag;
 `else
    // Will be executed in serial Shifter_Box later
    alu_outputs.op_stage2 = OP_Stage2_SH;
    alu_outputs.val1      = rs1_val;
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = rs1_tag;
    // Encode 'arith-shift' in bit [7] of val2
 `ifdef ISA_D
    WordFL val2 = extend (shamt);
@@ -428,6 +440,7 @@ function ALU_Outputs fv_OP_and_OP_IMM_shifts (ALU_Inputs inputs);
 `endif
    val2 = (val2 | { 0, instr_b30, 7'b0});
    alu_outputs.val2 = val2;
+   alu_outputs.tag2 = inputs.rs2_tag;
 `endif
 
    // Normal trace output (if no trap)
@@ -442,7 +455,7 @@ endfunction: fv_OP_and_OP_IMM_shifts
 // ----------------
 // Remaining OP and OP_IMM (excluding shifts, M ops MUL/DIV/REM)
 
-function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs);
+function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let rs1_val = inputs.rs1_val;
    let rs2_val = inputs.rs2_val;
 
@@ -464,15 +477,36 @@ function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs);
    let  funct3 = inputs.decoded_instr.funct3;
    Bool trap   = False;
    WordXL rd_val = ?;
+   TagT   rd_tag = defaultValue;
 
-   if      ((funct3 == f3_ADDI) && (! subtract)) rd_val = pack (s_rs1_val + s_rs2_val_local);
-   else if ((funct3 == f3_ADDI) && (subtract))   rd_val = pack (s_rs1_val - s_rs2_val_local);
-
-   else if (funct3 == f3_SLTI)  rd_val = ((s_rs1_val < s_rs2_val_local) ? 1 : 0);
-   else if (funct3 == f3_SLTIU) rd_val = ((rs1_val  < rs2_val_local)  ? 1 : 0);
-   else if (funct3 == f3_XORI)  rd_val = pack (s_rs1_val ^ s_rs2_val_local);
-   else if (funct3 == f3_ORI)   rd_val = pack (s_rs1_val | s_rs2_val_local);
-   else if (funct3 == f3_ANDI)  rd_val = pack (s_rs1_val & s_rs2_val_local);
+   if      ((funct3 == f3_ADDI) && (! subtract)) begin
+      rd_val = pack (s_rs1_val + s_rs2_val_local);
+      rd_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+   end
+   else if ((funct3 == f3_ADDI) && (subtract)) begin
+      rd_val = pack (s_rs1_val - s_rs2_val_local);
+      rd_tag = tagger.alu_sub(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+   end
+   else if (funct3 == f3_SLTI) begin
+      rd_val = ((s_rs1_val < s_rs2_val_local) ? 1 : 0);
+      rd_tag = tagger.alu_slt(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+   end
+   else if (funct3 == f3_SLTIU) begin
+      rd_val = ((rs1_val  < rs2_val_local)  ? 1 : 0);
+      rd_tag = tagger.alu_sltu(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+   end
+   else if (funct3 == f3_XORI) begin
+      rd_val = pack (s_rs1_val ^ s_rs2_val_local);
+      rd_tag = tagger.alu_xor(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+   end
+   else if (funct3 == f3_ORI) begin
+      rd_val = pack (s_rs1_val | s_rs2_val_local);
+      rd_tag = tagger.alu_or(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+   end
+   else if (funct3 == f3_ANDI) begin
+      rd_val = pack (s_rs1_val & s_rs2_val_local);
+      rd_tag = tagger.alu_and(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+   end
    else
       trap = True;
 
@@ -485,7 +519,7 @@ function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = rd_tag;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -499,7 +533,7 @@ endfunction: fv_OP_and_OP_IMM
 // ----------------
 // OP_IMM_32 (ADDIW, SLLIW, SRxIW)
 
-function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs);
+function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    WordXL   rs1_val     = inputs.rs1_val;
    IntXL    s_rs1_val   = unpack (rs1_val);
 
@@ -509,16 +543,19 @@ function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs);
    let    funct3 = inputs.decoded_instr.funct3;
    Bool   trap   = False;
    WordXL rd_val = ?;
+   TagT   rd_tag = defaultValue;
 
    if (funct3 == f3_ADDIW) begin
       IntXL  s_rs2_val = extend (unpack (inputs.decoded_instr.imm12_I));
       IntXL  sum       = s_rs1_val + s_rs2_val;
       WordXL tmp       = pack (sum);
       rd_val           = signExtend (tmp [31:0]);
+      rd_tag = tagger.alu_addw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
    end
    else if ((funct3 == f3_SLLIW) && shamt5_is_0) begin
       Bit #(32) tmp = truncate (rs1_val);
       rd_val = signExtend (tmp << shamt);
+      rd_tag = tagger.alu_sllw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
    end
    else if ((funct3 == f3_SRxIW) && shamt5_is_0) begin
       Bit #(1) instr_b30 = inputs.instr [30];
@@ -546,7 +583,7 @@ function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = rd_tag;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -560,7 +597,7 @@ endfunction: fv_OP_IMM_32
 // ----------------
 // OP_32 (excluding 'M' ops: MULW/ DIVW/ DIVUW/ REMW/ REMUW)
 
-function ALU_Outputs fv_OP_32 (ALU_Inputs inputs);
+function ALU_Outputs fv_OP_32 (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    Bit #(32) rs1_val = inputs.rs1_val [31:0];
    Bit #(32) rs2_val = inputs.rs2_val [31:0];
 
@@ -571,21 +608,27 @@ function ALU_Outputs fv_OP_32 (ALU_Inputs inputs);
    let    funct10 = inputs.decoded_instr.funct10;
    Bool   trap   = False;
    WordXL rd_val = ?;
+   TagT   rd_tag = defaultValue;
 
    if      (funct10 == f10_ADDW) begin
       rd_val = pack (signExtend (s_rs1_val + s_rs2_val));
+      rd_tag = tagger.alu_addw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
    end
    else if (funct10 == f10_SUBW) begin
       rd_val = pack (signExtend (s_rs1_val - s_rs2_val));
+      rd_tag = tagger.alu_subw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
    end
    else if (funct10 == f10_SLLW) begin
       rd_val = pack (signExtend (rs1_val << (rs2_val [4:0])));
+      rd_tag = tagger.alu_sllw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
    end
    else if (funct10 == f10_SRLW) begin
       rd_val = pack (signExtend (rs1_val >> (rs2_val [4:0])));
+      rd_tag = tagger.alu_srlw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
    end
    else if (funct10 == f10_SRAW) begin
       rd_val = pack (signExtend (s_rs1_val >> (rs2_val [4:0])));
+      rd_tag = tagger.alu_sraw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
    end
    else
       trap = True;
@@ -599,7 +642,7 @@ function ALU_Outputs fv_OP_32 (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = rd_tag;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -613,7 +656,7 @@ endfunction: fv_OP_32
 // ----------------------------------------------------------------
 // Upper Immediates
 
-function ALU_Outputs fv_LUI (ALU_Inputs inputs);
+function ALU_Outputs fv_LUI (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    Bit #(32)  v32    = { inputs.decoded_instr.imm20_U, 12'h0 };
    IntXL      iv     = extend (unpack (v32));
    let        rd_val = pack (iv);
@@ -637,7 +680,7 @@ function ALU_Outputs fv_LUI (ALU_Inputs inputs);
    return alu_outputs;
 endfunction
 
-function ALU_Outputs fv_AUIPC (ALU_Inputs inputs);
+function ALU_Outputs fv_AUIPC (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    IntXL  iv     = extend (unpack ({ inputs.decoded_instr.imm20_U, 12'b0}));
    IntXL  pc_s   = unpack (inputs.pc);
    WordXL rd_val = pack (pc_s + iv);
@@ -650,7 +693,7 @@ function ALU_Outputs fv_AUIPC (ALU_Inputs inputs);
 `else
    alu_outputs.val1      = rd_val;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = tagger.pc_tag(alu_outputs.val1);
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -664,7 +707,7 @@ endfunction
 // ----------------------------------------------------------------
 // LOAD
 
-function ALU_Outputs fv_LD (ALU_Inputs inputs);
+function ALU_Outputs fv_LD (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    // Signed versions of rs1_val and rs2_val
    let opcode = inputs.decoded_instr.opcode;
    IntXL s_rs1_val = unpack (inputs.rs1_val);
@@ -730,7 +773,7 @@ endfunction
 // ----------------------------------------------------------------
 // STORE
 
-function ALU_Outputs fv_ST (ALU_Inputs inputs);
+function ALU_Outputs fv_ST (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    // Signed version of rs1_val
    IntXL  s_rs1_val = unpack (inputs.rs1_val);
    IntXL  imm_s     = extend (unpack (inputs.decoded_instr.imm12_S));
@@ -806,7 +849,7 @@ endfunction
 // MISC_MEM (FENCE and FENCE.I)
 // No-ops, for now
 
-function ALU_Outputs fv_MISC_MEM (ALU_Inputs inputs);
+function ALU_Outputs fv_MISC_MEM (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let alu_outputs = alu_outputs_base;
    alu_outputs.control  = (  (inputs.decoded_instr.funct3 == f3_FENCE_I)
 			   ? CONTROL_FENCE_I
@@ -824,7 +867,7 @@ endfunction
 // ----------------------------------------------------------------
 // System instructions
 
-function ALU_Outputs fv_SYSTEM (ALU_Inputs inputs);
+function ALU_Outputs fv_SYSTEM (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let funct3      = inputs.decoded_instr.funct3;
    let alu_outputs = alu_outputs_base;
 
@@ -955,7 +998,7 @@ endfunction: fv_SYSTEM
 // Just pass through to the FP stage
 
 `ifdef ISA_F
-function ALU_Outputs fv_FP (ALU_Inputs inputs);
+function ALU_Outputs fv_FP (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let opcode = inputs.decoded_instr.opcode;
    let funct3 = inputs.decoded_instr.funct3;
    let funct7 = inputs.decoded_instr.funct7;
@@ -1049,7 +1092,7 @@ endfunction
 // Just pass through to the memory stage
 
 `ifdef ISA_A
-function ALU_Outputs fv_AMO (ALU_Inputs inputs);
+function ALU_Outputs fv_AMO (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let funct3 = inputs.decoded_instr.funct3;
    let funct5 = inputs.decoded_instr.funct5;
    let funct7 = inputs.decoded_instr.funct7;
@@ -1094,17 +1137,17 @@ endfunction
 // ----------------------------------------------------------------
 // Top-level ALU function
 
-function ALU_Outputs fv_ALU (ALU_Inputs inputs);
+function ALU_Outputs fv_ALU (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    let alu_outputs = alu_outputs_base;
 
    if (inputs.decoded_instr.opcode == op_BRANCH)
-      alu_outputs = fv_BRANCH (inputs);
+      alu_outputs = fv_BRANCH (inputs, tagger);
 
    else if (inputs.decoded_instr.opcode == op_JAL)
-      alu_outputs = fv_JAL (inputs);
+      alu_outputs = fv_JAL (inputs, tagger);
 
    else if (inputs.decoded_instr.opcode == op_JALR)
-      alu_outputs = fv_JALR (inputs);
+      alu_outputs = fv_JALR (inputs, tagger);
 
 `ifdef ISA_M
    // OP 'M' ops MUL/ MULH/ MULHSU/ MULHU/ DIV/ DIVU/ REM/ REMU
@@ -1162,58 +1205,58 @@ function ALU_Outputs fv_ALU (ALU_Inputs inputs);
 	    && (   (inputs.decoded_instr.funct3 == f3_SLLI)
 		|| (inputs.decoded_instr.funct3 == f3_SRLI)
 		|| (inputs.decoded_instr.funct3 == f3_SRAI)))
-      alu_outputs = fv_OP_and_OP_IMM_shifts (inputs);
+      alu_outputs = fv_OP_and_OP_IMM_shifts (inputs, tagger);
 
    // Remaining OP_IMM and OP (excluding shifts and 'M' ops MUL/DIV/REM)
    else if (   (inputs.decoded_instr.opcode == op_OP_IMM)
 	    || (inputs.decoded_instr.opcode == op_OP))
-      alu_outputs = fv_OP_and_OP_IMM (inputs);
+      alu_outputs = fv_OP_and_OP_IMM (inputs, tagger);
 
 `ifdef RV64
    else if (inputs.decoded_instr.opcode == op_OP_IMM_32)
-      alu_outputs = fv_OP_IMM_32 (inputs);
+      alu_outputs = fv_OP_IMM_32 (inputs, tagger);
 
    // Remaining op_OP_32 (excluding 'M' ops)
    else if (inputs.decoded_instr.opcode == op_OP_32)
-      alu_outputs = fv_OP_32 (inputs);
+      alu_outputs = fv_OP_32 (inputs, tagger);
 `endif
 
    else if (inputs.decoded_instr.opcode == op_LUI)
-      alu_outputs = fv_LUI (inputs);
+      alu_outputs = fv_LUI (inputs, tagger);
 
    else if (inputs.decoded_instr.opcode == op_AUIPC)
-      alu_outputs = fv_AUIPC (inputs);
+      alu_outputs = fv_AUIPC (inputs, tagger);
 
    else if (inputs.decoded_instr.opcode == op_LOAD)
-      alu_outputs = fv_LD (inputs);
+      alu_outputs = fv_LD (inputs, tagger);
 
    else if (inputs.decoded_instr.opcode == op_STORE)
-      alu_outputs = fv_ST (inputs);
+      alu_outputs = fv_ST (inputs, tagger);
 
    else if (inputs.decoded_instr.opcode == op_MISC_MEM)
-      alu_outputs = fv_MISC_MEM (inputs);
+      alu_outputs = fv_MISC_MEM (inputs, tagger);
 
    else if (inputs.decoded_instr.opcode == op_SYSTEM)
-      alu_outputs = fv_SYSTEM (inputs);
+      alu_outputs = fv_SYSTEM (inputs, tagger);
 
 `ifdef ISA_A
    else if (inputs.decoded_instr.opcode == op_AMO)
-      alu_outputs = fv_AMO (inputs);
+      alu_outputs = fv_AMO (inputs, tagger);
 `endif
 
 `ifdef ISA_F
    else if (   (inputs.decoded_instr.opcode == op_LOAD_FP))
-      alu_outputs = fv_LD (inputs);
+      alu_outputs = fv_LD (inputs, tagger);
 
    else if (   (inputs.decoded_instr.opcode == op_STORE_FP))
-      alu_outputs = fv_ST (inputs);
+      alu_outputs = fv_ST (inputs, tagger);
 
    else if (   (inputs.decoded_instr.opcode == op_FP)
             || (inputs.decoded_instr.opcode == op_FMADD)
             || (inputs.decoded_instr.opcode == op_FMSUB)
             || (inputs.decoded_instr.opcode == op_FNMSUB)
             || (inputs.decoded_instr.opcode == op_FNMADD))
-      alu_outputs = fv_FP (inputs);
+      alu_outputs = fv_FP (inputs, tagger);
 `endif
 
    else begin
