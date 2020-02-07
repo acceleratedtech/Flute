@@ -24,7 +24,7 @@ typedef Struct2 TagT;
 typedef Struct3 ArgsAndCsrs;
 typedef Module2 Policy;
 
-module mkTagMonitor#(Bool tagActive, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMonitor#(XLEN, Struct2));
+module mkTagMonitor#(Bit#(XLEN) tagctrl, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMonitor#(XLEN, Struct2));
 `ifdef OVERFLOW_POLICY
     let tp <- mkOverflowPolicy();
 `endif
@@ -38,6 +38,8 @@ module mkTagMonitor#(Bool tagActive, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMonitor#
     let tp <- mkUserInfluencedPolicy();
 `endif
     let policy = tp.policy;
+
+    Bool tagActive = unpack(tagctrl[0]);
 
     function TagT applyTagFn(function TagT tag_fn(ArgsAndCsrs args), TaggedData#(XLEN, TagT) v1, TaggedData#(XLEN, TagT) v2, Bit#(XLEN) result);
         Struct3 args = Struct3 { a: tagActive,

@@ -134,13 +134,14 @@ module mkCPU (CPU_IFC);
 `endif
 
    Vector#(8, Bit#(XLEN)) tagScratchCSRValues = replicate(defaultValue);
-   TagMonitor#(XLEN, TagT) tagger <- mkTagMonitor(True, tagScratchCSRValues);
 
    CSR_RegFile_IFC  csr_regfile  <- mkCSR_RegFile;
    let mcycle   = csr_regfile.read_csr_mcycle;
    let mstatus  = csr_regfile.read_mstatus;
    let misa     = csr_regfile.read_misa;
    let minstret = csr_regfile.read_csr_minstret;
+
+   TagMonitor#(XLEN, TagT) tagger <- mkTagMonitor(csr_regfile.read_tag_ctrl, csr_regfile.read_tag_scratch);
 
    // Near mem (caches or TCM, for example)
    Near_Mem_IFC  near_mem <- mkNear_Mem;

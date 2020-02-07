@@ -15,6 +15,7 @@ export  CSR_RegFile_IFC (..),  mkCSR_RegFile;
 // ================================================================
 // BSV library imports
 
+import BuildVector  :: *;
 import ConfigReg    :: *;
 import RegFile      :: *;
 import Vector       :: *;
@@ -118,6 +119,10 @@ interface CSR_RegFile_IFC;
    (* always_ready *)
    method WordXL read_mmrbm;
    // </SANCTUM>
+   // <Tagging>
+   method WordXL read_tag_ctrl;
+   method Vector#(8, WordXL) read_tag_scratch;
+   // </Tagging>
 
    // CSR trap actions
    method ActionValue #(Trap_Info)
@@ -1374,6 +1379,21 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
    method WordXL read_mmrbm;
       return  rg_mmrbm;
    endmethod
+   // <Tagging>
+   method WordXL read_tag_ctrl;
+      return rg_tagctrl;
+   endmethod
+   method Vector#(8, WordXL) read_tag_scratch;
+      return vec(rg_tagscratch0,
+                 rg_tagscratch1,
+                 rg_tagscratch2,
+                 rg_tagscratch3,
+                 rg_tagscratch4,
+                 rg_tagscratch5,
+                 rg_tagscratch6,
+                 rg_tagscratch7);
+   endmethod
+   // </Tagging>
 
    // CSR Trap actions
    method ActionValue #(Trap_Info)
