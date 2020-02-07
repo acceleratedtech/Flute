@@ -27,8 +27,8 @@ import GetPut_Aux :: *;
 // ================================================================
 // Project imports
 
-import ISA_Decls :: *;
-import TagPolicy :: *;
+import ISA_Decls  :: *;
+import TagMonitor :: *;
 
 // ================================================================
 

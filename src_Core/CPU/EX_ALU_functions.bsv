@@ -31,7 +31,7 @@ import Vector       :: *;
 import ISA_Decls   :: *;
 import CPU_Globals :: *;
 import FPR_RegFile :: *;
-import TagPolicy   :: *;
+import TagMonitor  :: *;
 import TV_Info     :: *;
 
 // ================================================================

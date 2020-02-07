@@ -22,7 +22,7 @@ package CPU_Globals;
 import ISA_Decls :: *;
 import GPR_RegFile :: *;
 import FPR_RegFile :: *;
-import TagPolicy :: *;
+import TagMonitor  :: *;
 import TV_Info   :: *;
 
 // ================================================================
