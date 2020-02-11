@@ -31,7 +31,7 @@ module mkTagMonitor#(Bit#(XLEN) tagctrl, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMoni
 `ifdef PUBLIC_ACCESS_POLICY
     let tp <- mkPublicAccessPolicy();
 `endif
-`ifdef SIZED_POINTER_POLICY :: *;
+`ifdef SIZED_POINTER_POLICY
     let tp <- mkSizedPointerPolicy();
 `endif
 `ifdef USER_INFLUENCED_POLICY
@@ -140,8 +140,14 @@ module mkTagMonitor#(Bit#(XLEN) tagctrl, Vector#(8, Bit#(XLEN)) tagCSRs)(TagMoni
     endmethod
 
     method TagT default_tag_op( TaggedData#(XLEN, TagT) v1, TaggedData#(XLEN, TagT) v2, Bit#(XLEN) result );
-       //TagT x6 = default_op.default_public_access_op(Struct1 { a: v1.tag, aa: v2.tag });
-       return defaultValue;
+        Struct3 args = Struct3 { a: tagActive,
+                                aa: tagCSRs[0],     aaa:     tagCSRs[1],     aaaa: tagCSRs[2], aaaaa:     tagCSRs[3],
+                                aaaaaa: tagCSRs[4], aaaaaaa: tagCSRs[5], aaaaaaaa: tagCSRs[6], aaaaaaaaa: tagCSRs[7],
+                                aaaaaaaaaa: Struct4 { data: v1.data, tag: v1.tag },
+                                aaaaaaaaaaa: Struct4 { data: v2.data, tag: v2.tag },
+                                aaaaaaaaaaaa: result };
+       TagT x6 = policy.default_tag_op(args);
+       return x6;
     endmethod
     method TagT constant_tag( Bit#(XLEN) x );
         Struct5 args = Struct5 { a: tagActive,

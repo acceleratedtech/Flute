@@ -12,17 +12,18 @@ endinstance
 
 
 typedef struct { Struct2 a; Bit#(64) aa;  } Struct1 deriving(Eq, Bits);
-typedef struct { Bool is_valid; Bool is_ptr; Bit#(16) ptr_pos_size; Bit#(16) ptr_neg_size;  } Struct2 deriving(Eq, Bits, FShow);
-typedef struct { Struct2 a; Struct2 aa;  } Struct3 deriving(Eq, Bits);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct5 aaaaaaaaaa; Struct5 aaaaaaaaaaa; Bit#(64) aaaaaaaaaaaa;  } Struct4 deriving(Eq, Bits);
-typedef struct { Bit#(64) data; Struct2 tag;  } Struct5 deriving(Eq, Bits);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Bit#(64) aaaaaaaaaa;  } Struct6 deriving(Eq, Bits);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct5 aaaaaaaaaa;  } Struct7 deriving(Eq, Bits);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct5 aaaaaaaaaa; Bit#(64) aaaaaaaaaaa;  } Struct8 deriving(Eq, Bits);
+typedef struct { Bool is_valid; Bool is_ptr; Bit#(16) ptr_pos_size; Bit#(16) ptr_neg_size;  } Struct2 deriving(Eq, Bits,FShow);
+typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct4 aaaaaaaaaa; Struct4 aaaaaaaaaaa; Bit#(64) aaaaaaaaaaaa;  } Struct3 deriving(Eq, Bits);
+typedef struct { Bit#(64) data; Struct2 tag;  } Struct4 deriving(Eq, Bits);
+typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Bit#(64) aaaaaaaaaa;  } Struct5 deriving(Eq, Bits);
+typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct4 aaaaaaaaaa;  } Struct6 deriving(Eq, Bits);
+typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct4 aaaaaaaaaa; Bit#(64) aaaaaaaaaaa;  } Struct7 deriving(Eq, Bits);
+
+typedef struct { Struct2 a; Struct2 aa;  } Struct17 deriving(Eq, Bits);
 
 interface Module1;
     method Struct2 sized_pointer_addition (Struct1 x_0);
-    method Struct2 default_sized_pointer_op (Struct3 x_0);
+    method Struct2 default_sized_pointer_op (Struct17 x_0);
     
 endinterface
 
@@ -37,35 +38,77 @@ module mkModule1 (Module1);
         Struct2 x_2 = ((x_0).a);
         Bit#(64) x_3 = ((x_0).aa);
         Struct2 x_4 = (x_2);
-        Struct2 x_5 = (Struct2 {is_valid : (x_4).is_valid, is_ptr :
-        (((x_2).is_valid) && ((x_2).is_ptr) ? ((! ((((x_3)[63:63]) <
-        ((Bit#(1))'(1'h0))) || (((Bit#(1))'(1'h0)) < ((x_3)[63:63]))) ? (!
-        ((! ((x_3) < (zeroExtend((x_2).ptr_pos_size)))) &&
-        ((zeroExtend((x_2).ptr_pos_size)) < (x_3)))) : (! ((! ((-(x_3)) <
-        (zeroExtend((x_2).ptr_neg_size)))) &&
-        ((zeroExtend((x_2).ptr_neg_size)) < (-(x_3))))))) : ((x_4).is_ptr)),
-        ptr_pos_size : (((x_2).is_valid) && ((x_2).is_ptr) ? ((!
-        ((((x_3)[63:63]) < ((Bit#(1))'(1'h0))) || (((Bit#(1))'(1'h0)) <
-        ((x_3)[63:63]))) ? (((! ((x_3) < (zeroExtend((x_2).ptr_pos_size))))
-        && ((zeroExtend((x_2).ptr_pos_size)) < (x_3)) ? ((x_4).ptr_pos_size)
-        : (((x_4).ptr_pos_size) - ((x_3)[15:0])))) : (((! ((-(x_3)) <
-        (zeroExtend((x_2).ptr_neg_size)))) &&
-        ((zeroExtend((x_2).ptr_neg_size)) < (-(x_3))) ? ((x_4).ptr_pos_size)
-        : (((x_4).ptr_pos_size) + ((-(x_3))[15:0])))))) :
-        ((x_4).ptr_pos_size)), ptr_neg_size : (((x_2).is_valid) &&
-        ((x_2).is_ptr) ? ((! ((((x_3)[63:63]) < ((Bit#(1))'(1'h0))) ||
-        (((Bit#(1))'(1'h0)) < ((x_3)[63:63]))) ? (((! ((x_3) <
-        (zeroExtend((x_2).ptr_pos_size)))) &&
-        ((zeroExtend((x_2).ptr_pos_size)) < (x_3)) ? ((x_4).ptr_neg_size) :
-        (((x_4).ptr_neg_size) + ((x_3)[15:0])))) : (((! ((-(x_3)) <
-        (zeroExtend((x_2).ptr_neg_size)))) &&
-        ((zeroExtend((x_2).ptr_neg_size)) < (-(x_3))) ? ((x_4).ptr_neg_size)
-        : (((x_4).ptr_neg_size) - ((-(x_3))[15:0])))))) :
-        ((x_4).ptr_neg_size))});
-        return x_5;
+        let x_19 = ?;
+        if (((x_2).is_valid) && ((x_2).is_ptr)) begin
+        
+            let x_17 = ?;
+            if (! ((((x_3)[63:63]) < ((Bit#(1))'(1'h0))) ||
+            (((Bit#(1))'(1'h0)) < ((x_3)[63:63])))) begin
+            
+                let x_9 = ?;
+                if ((! ((x_3) < (zeroExtend((x_2).ptr_pos_size)))) &&
+                ((zeroExtend((x_2).ptr_pos_size)) < (x_3))) begin
+                
+                    Struct2 x_5 = (Struct2 {is_valid : (x_4).is_valid, is_ptr
+                    : (Bool)'(False), ptr_pos_size : (x_4).ptr_pos_size,
+                    ptr_neg_size : (x_4).ptr_neg_size});
+                    x_9 = x_5;
+                end else begin
+                
+                    Struct2 x_6 = (Struct2 {is_valid : (x_4).is_valid, is_ptr
+                    : (Bool)'(True), ptr_pos_size : (x_4).ptr_pos_size,
+                    ptr_neg_size : (x_4).ptr_neg_size});
+                    Struct2 x_7 = (Struct2 {is_valid : (x_6).is_valid, is_ptr
+                    : (x_6).is_ptr, ptr_pos_size : ((x_6).ptr_pos_size) -
+                    ((x_3)[15:0]), ptr_neg_size : (x_6).ptr_neg_size});
+                    
+                    Struct2 x_8 = (Struct2 {is_valid : (x_7).is_valid, is_ptr
+                    : (x_7).is_ptr, ptr_pos_size : (x_7).ptr_pos_size,
+                    ptr_neg_size : ((x_7).ptr_neg_size) + ((x_3)[15:0])});
+                    x_9 = x_8;
+                end
+                Struct2 x_10 = (x_9);
+                x_17 = x_10;
+            end else begin
+            
+                let x_15 = ?;
+                if ((! ((-(x_3)) < (zeroExtend((x_2).ptr_neg_size)))) &&
+                ((zeroExtend((x_2).ptr_neg_size)) < (-(x_3)))) begin
+                
+                    Struct2 x_11 = (Struct2 {is_valid : (x_4).is_valid,
+                    is_ptr : (Bool)'(False), ptr_pos_size :
+                    (x_4).ptr_pos_size, ptr_neg_size : (x_4).ptr_neg_size});
+                    
+                    x_15 = x_11;
+                end else begin
+                
+                    Struct2 x_12 = (Struct2 {is_valid : (x_4).is_valid,
+                    is_ptr : (Bool)'(True), ptr_pos_size :
+                    (x_4).ptr_pos_size, ptr_neg_size : (x_4).ptr_neg_size});
+                    
+                    Struct2 x_13 = (Struct2 {is_valid : (x_12).is_valid,
+                    is_ptr : (x_12).is_ptr, ptr_pos_size :
+                    ((x_12).ptr_pos_size) + ((-(x_3))[15:0]), ptr_neg_size :
+                    (x_12).ptr_neg_size});
+                    Struct2 x_14 = (Struct2 {is_valid : (x_13).is_valid,
+                    is_ptr : (x_13).is_ptr, ptr_pos_size :
+                    (x_13).ptr_pos_size, ptr_neg_size : ((x_13).ptr_neg_size)
+                    - ((-(x_3))[15:0])});
+                    x_15 = x_14;
+                end
+                Struct2 x_16 = (x_15);
+                x_17 = x_16;
+            end
+            Struct2 x_18 = (x_17);
+            x_19 = x_18;
+        end else begin
+        x_19 = x_4;
+        end
+        Struct2 x_20 = (x_19);
+        return x_20;
     endmethod
     
-    method Struct2 default_sized_pointer_op (Struct3 x_0);
+    method Struct2 default_sized_pointer_op (Struct17 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -80,39 +123,40 @@ module mkModule1 (Module1);
 endmodule
 
 interface Module2;
-    method Struct2 alu_add (Struct4 x_0);
-    method Struct2 alu_addw (Struct4 x_0);
-    method Struct2 alu_sub (Struct4 x_0);
-    method Struct2 alu_subw (Struct4 x_0);
-    method Struct2 alu_and (Struct4 x_0);
-    method Struct2 alu_or (Struct4 x_0);
-    method Struct2 alu_xor (Struct4 x_0);
-    method Struct2 alu_slt (Struct4 x_0);
-    method Struct2 alu_sltu (Struct4 x_0);
-    method Struct2 alu_sll (Struct4 x_0);
-    method Struct2 alu_sllw (Struct4 x_0);
-    method Struct2 alu_srl (Struct4 x_0);
-    method Struct2 alu_sra (Struct4 x_0);
-    method Struct2 alu_srlw (Struct4 x_0);
-    method Struct2 alu_sraw (Struct4 x_0);
-    method Struct2 unknown_tag (Struct6 x_0);
-    method Struct2 pc_tag (Struct6 x_0);
-    method Struct2 constant_tag (Struct6 x_0);
-    method Bool is_legal_next_pc (Struct7 x_0);
-    method Bool is_legal_store_address (Struct8 x_0);
-    method Bool is_legal_load_address (Struct8 x_0);
+    method Struct2 alu_add (Struct3 x_0);
+    method Struct2 alu_addw (Struct3 x_0);
+    method Struct2 alu_sub (Struct3 x_0);
+    method Struct2 alu_subw (Struct3 x_0);
+    method Struct2 alu_and (Struct3 x_0);
+    method Struct2 alu_or (Struct3 x_0);
+    method Struct2 alu_xor (Struct3 x_0);
+    method Struct2 alu_slt (Struct3 x_0);
+    method Struct2 alu_sltu (Struct3 x_0);
+    method Struct2 alu_sll (Struct3 x_0);
+    method Struct2 alu_sllw (Struct3 x_0);
+    method Struct2 alu_srl (Struct3 x_0);
+    method Struct2 alu_sra (Struct3 x_0);
+    method Struct2 alu_srlw (Struct3 x_0);
+    method Struct2 alu_sraw (Struct3 x_0);
+    method Struct2 default_tag_op (Struct3 x_0);
+    method Struct2 unknown_tag (Struct5 x_0);
+    method Struct2 pc_tag (Struct5 x_0);
+    method Struct2 constant_tag (Struct5 x_0);
+    method Bool is_legal_next_pc (Struct6 x_0);
+    method Bool is_legal_store_address (Struct7 x_0);
+    method Bool is_legal_load_address (Struct7 x_0);
     
 endinterface
 
 
 module
   mkModule2#(function Struct2 sized_pointer_addition(Struct1 _),
-  function Struct2 default_sized_pointer_op(Struct3 _))
+  function Struct2 default_sized_pointer_op(Struct17 _))
   (Module2);
     
     // No rules in this module
     
-    method Struct2 alu_add (Struct4 x_0);
+    method Struct2 alu_add (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -125,23 +169,41 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
-        let x_15 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
-        (x_12).data});
-        let x_16 = sized_pointer_addition(Struct1 {a : (x_12).tag, aa :
-        (x_11).data});
-        Struct2 x_17 = (((((x_11).tag).is_ptr) && ((!
-        (((x_12).tag).is_valid)) || (! (((x_12).tag).is_ptr))) ? (x_15) :
-        ((((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
-        (((x_12).tag).is_ptr) ? (x_16) : (x_14)))));
-        return x_17;
+        Struct2 x_15 = (x_14);
+        let x_22 = ?;
+        if ((((x_11).tag).is_ptr) && ((! (((x_12).tag).is_valid)) || (!
+        (((x_12).tag).is_ptr)))) begin
+        
+            let x_16 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
+            (x_12).data});
+            Struct2 x_17 = (x_16);
+            x_22 = x_17;
+        end else begin
+        
+            let x_20 = ?;
+            if (((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
+            (((x_12).tag).is_ptr)) begin
+            
+                let x_18 = sized_pointer_addition(Struct1 {a : (x_12).tag,
+                aa : (x_11).data});
+                Struct2 x_19 = (x_18);
+                x_20 = x_19;
+            end else begin
+            x_20 = x_15;
+            end
+            Struct2 x_21 = (x_20);
+            x_22 = x_21;
+        end
+        Struct2 x_23 = (x_22);
+        return x_23;
     endmethod
     
-    method Struct2 alu_addw (Struct4 x_0);
+    method Struct2 alu_addw (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -154,23 +216,41 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
-        let x_15 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
-        signExtend(((x_12).data)[31:0])});
-        let x_16 = sized_pointer_addition(Struct1 {a : (x_12).tag, aa :
-        signExtend(((x_11).data)[31:0])});
-        Struct2 x_17 = (((((x_11).tag).is_ptr) && ((!
-        (((x_12).tag).is_valid)) || (! (((x_12).tag).is_ptr))) ? (x_15) :
-        ((((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
-        (((x_12).tag).is_ptr) ? (x_16) : (x_14)))));
-        return x_17;
+        Struct2 x_15 = (x_14);
+        let x_22 = ?;
+        if ((((x_11).tag).is_ptr) && ((! (((x_12).tag).is_valid)) || (!
+        (((x_12).tag).is_ptr)))) begin
+        
+            let x_16 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
+            signExtend(((x_12).data)[31:0])});
+            Struct2 x_17 = (x_16);
+            x_22 = x_17;
+        end else begin
+        
+            let x_20 = ?;
+            if (((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
+            (((x_12).tag).is_ptr)) begin
+            
+                let x_18 = sized_pointer_addition(Struct1 {a : (x_12).tag,
+                aa : signExtend(((x_11).data)[31:0])});
+                Struct2 x_19 = (x_18);
+                x_20 = x_19;
+            end else begin
+            x_20 = x_15;
+            end
+            Struct2 x_21 = (x_20);
+            x_22 = x_21;
+        end
+        Struct2 x_23 = (x_22);
+        return x_23;
     endmethod
     
-    method Struct2 alu_sub (Struct4 x_0);
+    method Struct2 alu_sub (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -183,23 +263,41 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
-        let x_15 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
-        -((x_12).data)});
-        let x_16 = sized_pointer_addition(Struct1 {a : (x_12).tag, aa :
-        -((x_11).data)});
-        Struct2 x_17 = (((((x_11).tag).is_ptr) && ((!
-        (((x_12).tag).is_valid)) || (! (((x_12).tag).is_ptr))) ? (x_15) :
-        ((((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
-        (((x_12).tag).is_ptr) ? (x_16) : (x_14)))));
-        return x_17;
+        Struct2 x_15 = (x_14);
+        let x_22 = ?;
+        if ((((x_11).tag).is_ptr) && ((! (((x_12).tag).is_valid)) || (!
+        (((x_12).tag).is_ptr)))) begin
+        
+            let x_16 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
+            -((x_12).data)});
+            Struct2 x_17 = (x_16);
+            x_22 = x_17;
+        end else begin
+        
+            let x_20 = ?;
+            if (((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
+            (((x_12).tag).is_ptr)) begin
+            
+                let x_18 = sized_pointer_addition(Struct1 {a : (x_12).tag,
+                aa : -((x_11).data)});
+                Struct2 x_19 = (x_18);
+                x_20 = x_19;
+            end else begin
+            x_20 = x_15;
+            end
+            Struct2 x_21 = (x_20);
+            x_22 = x_21;
+        end
+        Struct2 x_23 = (x_22);
+        return x_23;
     endmethod
     
-    method Struct2 alu_subw (Struct4 x_0);
+    method Struct2 alu_subw (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -212,23 +310,41 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
-        let x_15 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
-        -(signExtend(((x_12).data)[31:0]))});
-        let x_16 = sized_pointer_addition(Struct1 {a : (x_12).tag, aa :
-        -(signExtend(((x_11).data)[31:0]))});
-        Struct2 x_17 = (((((x_11).tag).is_ptr) && ((!
-        (((x_12).tag).is_valid)) || (! (((x_12).tag).is_ptr))) ? (x_15) :
-        ((((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
-        (((x_12).tag).is_ptr) ? (x_16) : (x_14)))));
-        return x_17;
+        Struct2 x_15 = (x_14);
+        let x_22 = ?;
+        if ((((x_11).tag).is_ptr) && ((! (((x_12).tag).is_valid)) || (!
+        (((x_12).tag).is_ptr)))) begin
+        
+            let x_16 = sized_pointer_addition(Struct1 {a : (x_11).tag, aa :
+            -(signExtend(((x_12).data)[31:0]))});
+            Struct2 x_17 = (x_16);
+            x_22 = x_17;
+        end else begin
+        
+            let x_20 = ?;
+            if (((! (((x_11).tag).is_valid)) || (! (((x_11).tag).is_ptr))) &&
+            (((x_12).tag).is_ptr)) begin
+            
+                let x_18 = sized_pointer_addition(Struct1 {a : (x_12).tag,
+                aa : -(signExtend(((x_11).data)[31:0]))});
+                Struct2 x_19 = (x_18);
+                x_20 = x_19;
+            end else begin
+            x_20 = x_15;
+            end
+            Struct2 x_21 = (x_20);
+            x_22 = x_21;
+        end
+        Struct2 x_23 = (x_22);
+        return x_23;
     endmethod
     
-    method Struct2 alu_and (Struct4 x_0);
+    method Struct2 alu_and (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -241,16 +357,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_or (Struct4 x_0);
+    method Struct2 alu_or (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -263,16 +379,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_xor (Struct4 x_0);
+    method Struct2 alu_xor (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -285,16 +401,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_slt (Struct4 x_0);
+    method Struct2 alu_slt (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -307,16 +423,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_sltu (Struct4 x_0);
+    method Struct2 alu_sltu (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -329,16 +445,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_sll (Struct4 x_0);
+    method Struct2 alu_sll (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -351,16 +467,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_sllw (Struct4 x_0);
+    method Struct2 alu_sllw (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -373,16 +489,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_srl (Struct4 x_0);
+    method Struct2 alu_srl (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -395,16 +511,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_sra (Struct4 x_0);
+    method Struct2 alu_sra (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -417,16 +533,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_srlw (Struct4 x_0);
+    method Struct2 alu_srlw (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -439,16 +555,16 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 alu_sraw (Struct4 x_0);
+    method Struct2 alu_sraw (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -461,16 +577,38 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
-        Struct5 x_12 = ((x_0).aaaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
         Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
-        let x_14 = default_sized_pointer_op(Struct3 {a : (x_11).tag, aa :
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
         return x_15;
     endmethod
     
-    method Struct2 unknown_tag (Struct6 x_0);
+    method Struct2 default_tag_op (Struct3 x_0);
+        Struct2 x_1 =
+        ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
+        
+        Bool x_2 = ((x_0).a);
+        Bit#(64) x_3 = ((x_0).aa);
+        Bit#(64) x_4 = ((x_0).aaa);
+        Bit#(64) x_5 = ((x_0).aaaa);
+        Bit#(64) x_6 = ((x_0).aaaaa);
+        Bit#(64) x_7 = ((x_0).aaaaaa);
+        Bit#(64) x_8 = ((x_0).aaaaaaa);
+        Bit#(64) x_9 = ((x_0).aaaaaaaa);
+        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
+        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
+        (x_12).tag});
+        Struct2 x_15 = (x_14);
+        return x_15;
+    endmethod
+    
+    method Struct2 unknown_tag (Struct5 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -490,7 +628,7 @@ module
         return x_12;
     endmethod
     
-    method Struct2 pc_tag (Struct6 x_0);
+    method Struct2 pc_tag (Struct5 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -510,7 +648,7 @@ module
         return x_12;
     endmethod
     
-    method Struct2 constant_tag (Struct6 x_0);
+    method Struct2 constant_tag (Struct5 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
@@ -530,7 +668,7 @@ module
         return x_12;
     endmethod
     
-    method Bool is_legal_next_pc (Struct7 x_0);
+    method Bool is_legal_next_pc (Struct6 x_0);
         Bool x_1 = ((Bool)'(False));
         Bool x_2 = ((x_0).a);
         Bit#(64) x_3 = ((x_0).aa);
@@ -541,12 +679,12 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Bool x_12 = ((Bool)'(True));
         return x_12;
     endmethod
     
-    method Bool is_legal_store_address (Struct8 x_0);
+    method Bool is_legal_store_address (Struct7 x_0);
         Bool x_1 = ((Bool)'(False));
         Bool x_2 = ((x_0).a);
         Bit#(64) x_3 = ((x_0).aa);
@@ -557,14 +695,14 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Bit#(64) x_12 = ((x_0).aaaaaaaaaaa);
         Bool x_13 = (((! (x_2)) || ((! (((x_11).tag).is_valid)) ||
         (((x_11).tag).is_ptr)) ? ((Bool)'(True)) : ((Bool)'(False))));
         return x_13;
     endmethod
     
-    method Bool is_legal_load_address (Struct8 x_0);
+    method Bool is_legal_load_address (Struct7 x_0);
         Bool x_1 = ((Bool)'(False));
         Bool x_2 = ((x_0).a);
         Bit#(64) x_3 = ((x_0).aa);
@@ -575,7 +713,7 @@ module
         Bit#(64) x_8 = ((x_0).aaaaaaa);
         Bit#(64) x_9 = ((x_0).aaaaaaaa);
         Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Struct5 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Bit#(64) x_12 = ((x_0).aaaaaaaaaaa);
         Bool x_13 = (((! (x_2)) || ((! (((x_11).tag).is_valid)) ||
         (((x_11).tag).is_ptr)) ? ((Bool)'(True)) : ((Bool)'(False))));
@@ -590,7 +728,6 @@ endinterface
 
 module mkSizedPointerPolicy (SizedPointerPolicy);
     Module1 m1 <- mkModule1 ();
-    Module2 m2 <- mkModule2 (m1.sized_pointer_addition,
-    m1.default_sized_pointer_op);
+    Module2 m2 <- mkModule2 (m1.sized_pointer_addition, m1.default_sized_pointer_op);
     interface policy = m2;
 endmodule

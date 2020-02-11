@@ -58,6 +58,7 @@ interface Module2;
     method Struct2 alu_sra (Struct3 x_0);
     method Struct2 alu_srlw (Struct3 x_0);
     method Struct2 alu_sraw (Struct3 x_0);
+    method Struct2 default_tag_op (Struct3 x_0);
     method Struct2 unknown_tag (Struct5 x_0);
     method Struct2 pc_tag (Struct5 x_0);
     method Struct2 constant_tag (Struct5 x_0);
@@ -93,13 +94,32 @@ module
         let x_14 = default_overflow_op(Struct1 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
-        Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
-        signed_overflow : (! (((((x_11).data)[63:63]) <
-        (((x_12).data)[63:63])) || ((((x_12).data)[63:63]) <
-        (((x_11).data)[63:63])))) && (((((x_11).data)[63:63]) <
-        ((x_13)[63:63])) || (((x_13)[63:63]) < (((x_11).data)[63:63]))),
-        unsigned_overflow : (x_13) < ((x_11).data)});
-        return x_16;
+        let x_17 = ?;
+        if ((x_13) < ((x_11).data)) begin
+        
+            Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
+            signed_overflow : (x_15).signed_overflow, unsigned_overflow :
+            (Bool)'(True)});
+            x_17 = x_16;
+        end else begin
+        x_17 = x_15;
+        end
+        Struct2 x_18 = (x_17);
+        let x_20 = ?;
+        if ((! (((((x_11).data)[63:63]) < (((x_12).data)[63:63])) ||
+        ((((x_12).data)[63:63]) < (((x_11).data)[63:63])))) &&
+        (((((x_11).data)[63:63]) < ((x_13)[63:63])) || (((x_13)[63:63]) <
+        (((x_11).data)[63:63])))) begin
+        
+            Struct2 x_19 = (Struct2 {unknown_tag : (x_18).unknown_tag,
+            signed_overflow : (Bool)'(True), unsigned_overflow :
+            (x_18).unsigned_overflow});
+            x_20 = x_19;
+        end else begin
+        x_20 = x_18;
+        end
+        Struct2 x_21 = (x_20);
+        return x_21;
     endmethod
     
     method Struct2 alu_addw (Struct3 x_0);
@@ -121,13 +141,32 @@ module
         let x_14 = default_overflow_op(Struct1 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
-        Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
-        signed_overflow : (! (((((x_11).data)[31:31]) <
-        (((x_12).data)[31:31])) || ((((x_12).data)[31:31]) <
-        (((x_11).data)[31:31])))) && (((((x_11).data)[31:31]) <
-        ((x_13)[31:31])) || (((x_13)[31:31]) < (((x_11).data)[31:31]))),
-        unsigned_overflow : ((x_13)[31:0]) < (((x_11).data)[31:0])});
-        return x_16;
+        let x_17 = ?;
+        if (((x_13)[31:0]) < (((x_11).data)[31:0])) begin
+        
+            Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
+            signed_overflow : (x_15).signed_overflow, unsigned_overflow :
+            (Bool)'(True)});
+            x_17 = x_16;
+        end else begin
+        x_17 = x_15;
+        end
+        Struct2 x_18 = (x_17);
+        let x_20 = ?;
+        if ((! (((((x_11).data)[31:31]) < (((x_12).data)[31:31])) ||
+        ((((x_12).data)[31:31]) < (((x_11).data)[31:31])))) &&
+        (((((x_11).data)[31:31]) < ((x_13)[31:31])) || (((x_13)[31:31]) <
+        (((x_11).data)[31:31])))) begin
+        
+            Struct2 x_19 = (Struct2 {unknown_tag : (x_18).unknown_tag,
+            signed_overflow : (Bool)'(True), unsigned_overflow :
+            (x_18).unsigned_overflow});
+            x_20 = x_19;
+        end else begin
+        x_20 = x_18;
+        end
+        Struct2 x_21 = (x_20);
+        return x_21;
     endmethod
     
     method Struct2 alu_sub (Struct3 x_0);
@@ -149,14 +188,32 @@ module
         let x_14 = default_overflow_op(Struct1 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
-        Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
-        signed_overflow : (! (((((x_11).data)[63:63]) <
-        (~(((x_12).data)[63:63]))) || ((~(((x_12).data)[63:63])) <
-        (((x_11).data)[63:63])))) && (((((x_11).data)[63:63]) <
-        ((x_13)[63:63])) || (((x_13)[63:63]) < (((x_11).data)[63:63]))),
-        unsigned_overflow : (! ((x_13) < ((x_11).data))) && (((x_11).data) <
-        (x_13))});
-        return x_16;
+        let x_17 = ?;
+        if ((! ((x_13) < ((x_11).data))) && (((x_11).data) < (x_13))) begin
+        
+            Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
+            signed_overflow : (x_15).signed_overflow, unsigned_overflow :
+            (Bool)'(True)});
+            x_17 = x_16;
+        end else begin
+        x_17 = x_15;
+        end
+        Struct2 x_18 = (x_17);
+        let x_20 = ?;
+        if ((! (((((x_11).data)[63:63]) < (~(((x_12).data)[63:63]))) ||
+        ((~(((x_12).data)[63:63])) < (((x_11).data)[63:63])))) &&
+        (((((x_11).data)[63:63]) < ((x_13)[63:63])) || (((x_13)[63:63]) <
+        (((x_11).data)[63:63])))) begin
+        
+            Struct2 x_19 = (Struct2 {unknown_tag : (x_18).unknown_tag,
+            signed_overflow : (Bool)'(True), unsigned_overflow :
+            (x_18).unsigned_overflow});
+            x_20 = x_19;
+        end else begin
+        x_20 = x_18;
+        end
+        Struct2 x_21 = (x_20);
+        return x_21;
     endmethod
     
     method Struct2 alu_subw (Struct3 x_0);
@@ -178,14 +235,33 @@ module
         let x_14 = default_overflow_op(Struct1 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
-        Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
-        signed_overflow : (! (((x_13)[31:0]) < (((x_11).data)[31:0]))) &&
-        ((((x_11).data)[31:0]) < ((x_13)[31:0])), unsigned_overflow : (!
-        (((((x_11).data)[31:31]) < (~(((x_12).data)[31:31]))) ||
+        let x_17 = ?;
+        if ((! (((x_13)[31:0]) < (((x_11).data)[31:0]))) &&
+        ((((x_11).data)[31:0]) < ((x_13)[31:0]))) begin
+        
+            Struct2 x_16 = (Struct2 {unknown_tag : (x_15).unknown_tag,
+            signed_overflow : (x_15).signed_overflow, unsigned_overflow :
+            (Bool)'(True)});
+            x_17 = x_16;
+        end else begin
+        x_17 = x_15;
+        end
+        Struct2 x_18 = (x_17);
+        let x_20 = ?;
+        if ((! (((((x_11).data)[31:31]) < (~(((x_12).data)[31:31]))) ||
         ((~(((x_12).data)[31:31])) < (((x_11).data)[31:31])))) &&
         (((((x_11).data)[31:31]) < ((x_13)[31:31])) || (((x_13)[31:31]) <
-        (((x_11).data)[31:31])))});
-        return x_16;
+        (((x_11).data)[31:31])))) begin
+        
+            Struct2 x_19 = (Struct2 {unknown_tag : (x_18).unknown_tag,
+            signed_overflow : (Bool)'(True), unsigned_overflow :
+            (x_18).unsigned_overflow});
+            x_20 = x_19;
+        end else begin
+        x_20 = x_18;
+        end
+        Struct2 x_21 = (x_20);
+        return x_21;
     endmethod
     
     method Struct2 alu_and (Struct3 x_0);
@@ -409,6 +485,28 @@ module
     endmethod
     
     method Struct2 alu_sraw (Struct3 x_0);
+        Struct2 x_1 =
+        ((Struct2)'(Struct2 {unknown_tag: False, signed_overflow: False, unsigned_overflow: False}));
+        
+        Bool x_2 = ((x_0).a);
+        Bit#(64) x_3 = ((x_0).aa);
+        Bit#(64) x_4 = ((x_0).aaa);
+        Bit#(64) x_5 = ((x_0).aaaa);
+        Bit#(64) x_6 = ((x_0).aaaaa);
+        Bit#(64) x_7 = ((x_0).aaaaaa);
+        Bit#(64) x_8 = ((x_0).aaaaaaa);
+        Bit#(64) x_9 = ((x_0).aaaaaaaa);
+        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
+        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        let x_14 = default_overflow_op(Struct1 {a : (x_11).tag, aa :
+        (x_12).tag});
+        Struct2 x_15 = (x_14);
+        return x_15;
+    endmethod
+    
+    method Struct2 default_tag_op (Struct3 x_0);
         Struct2 x_1 =
         ((Struct2)'(Struct2 {unknown_tag: False, signed_overflow: False, unsigned_overflow: False}));
         

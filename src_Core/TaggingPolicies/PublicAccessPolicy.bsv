@@ -10,6 +10,7 @@ instance DefaultValue#(Struct2);
     defaultValue = Struct2 { is_secret: False };
 endinstance
 
+
 typedef struct { Struct2 a; Struct2 aa;  } Struct1 deriving(Eq, Bits);
 typedef struct { Bool is_secret;  } Struct2 deriving(Eq, Bits, FShow);
 typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct4 aaaaaaaaaa; Struct4 aaaaaaaaaaa; Bit#(64) aaaaaaaaaaaa;  } Struct3 deriving(Eq, Bits);
@@ -54,6 +55,7 @@ interface Module2;
     method Struct2 alu_sra (Struct3 x_0);
     method Struct2 alu_srlw (Struct3 x_0);
     method Struct2 alu_sraw (Struct3 x_0);
+    method Struct2 default_tag_op (Struct3 x_0);
     method Struct2 unknown_tag (Struct5 x_0);
     method Struct2 pc_tag (Struct5 x_0);
     method Struct2 constant_tag (Struct5 x_0);
@@ -370,6 +372,26 @@ module
         return x_15;
     endmethod
     
+    method Struct2 default_tag_op (Struct3 x_0);
+        Struct2 x_1 = ((Struct2)'(Struct2 {is_secret: False}));
+        Bool x_2 = ((x_0).a);
+        Bit#(64) x_3 = ((x_0).aa);
+        Bit#(64) x_4 = ((x_0).aaa);
+        Bit#(64) x_5 = ((x_0).aaaa);
+        Bit#(64) x_6 = ((x_0).aaaaa);
+        Bit#(64) x_7 = ((x_0).aaaaaa);
+        Bit#(64) x_8 = ((x_0).aaaaaaa);
+        Bit#(64) x_9 = ((x_0).aaaaaaaa);
+        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Struct4 x_11 = ((x_0).aaaaaaaaaa);
+        Struct4 x_12 = ((x_0).aaaaaaaaaaa);
+        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        let x_14 = default_public_access_op(Struct1 {a : (x_11).tag, aa :
+        (x_12).tag});
+        Struct2 x_15 = (x_14);
+        return x_15;
+    endmethod
+    
     method Struct2 unknown_tag (Struct5 x_0);
         Struct2 x_1 = ((Struct2)'(Struct2 {is_secret: False}));
         Bool x_2 = ((x_0).a);
@@ -481,5 +503,5 @@ endinterface
 module mkPublicAccessPolicy (PublicAccessPolicy);
     Module1 m1 <- mkModule1 ();
     Module2 m2 <- mkModule2 (m1.default_public_access_op);
-    interface policy = m2;
+    interface policy = m2;    
 endmodule
