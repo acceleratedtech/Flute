@@ -81,6 +81,8 @@ compile:  build_dir  Verilog_RTL
 	bsc -u -elab -verilog  $(RTL_GEN_DIRS)  $(BSC_COMPILATION_FLAGS)  $(BSC_PATH)  $(TOPFILE)
 	@echo  "INFO: Generated RTL into Verilog_RTL"
 	@mkdir -p xilinx_ip/hdl/
+	cp -r ../src_SSITH_P2/xilinx_ip/{component.xml,src,xgui} xilinx_ip
+	cp -r ../src_SSITH_P2/xilinx_ip/hdl/[A-Z]* xilinx_ip/hdl
 	cp  Verilog_RTL/*  xilinx_ip/hdl/
 	@echo  "INFO: Copied RTL from  Verilog_RTL/  to  xilinx_ip/hdl/"
 
