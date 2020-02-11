@@ -36,7 +36,10 @@ BSC_COMPILATION_FLAGS += \
 	-D INCLUDE_TANDEM_VERIF \
 	-D BRVF_TRACE \
 	-D XILINX_BSCAN  -D XILINX_XCVU9P  -D JTAG_TAP \
-	-D PUBLIC_ACCESS_POLICY
+	-D SIZED_POINTER_POLICY
+#	-D USER_INFLUENCED_POLICY
+#	-D OVERFLOW_POLICY
+#	-D PUBLIC_ACCESS_POLICY
 
 # ================================================================
 # Search path for bsc for .bsv files
