@@ -92,6 +92,7 @@ typedef struct {
    RegName    rd;
    Addr       addr;     // Branch, jump: newPC
 		        // Mem ops and AMOs: mem addr
+   TagT       addr_tag;
 `ifdef ISA_D
    WordFL     val1;     // OP_Stage2_FD: arg1
    WordFL     val2;     // OP_Stage2_FD: arg2
@@ -124,6 +125,7 @@ ALU_Outputs alu_outputs_base
 	       op_stage2 : ?,
 	       rd        : ?,
 	       addr      : ?,
+               addr_tag  : defaultValue,
 	       val1      : ?,
 	       val2      : ?,
 	       tag1      : defaultValue,
@@ -259,6 +261,7 @@ function ALU_Outputs fv_BRANCH (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagge
    alu_outputs.rd        = 0;
    //FIXME: should there be a tag with this?
    alu_outputs.addr      = next_pc;
+   alu_outputs.addr_tag = tagger.pc_tag(next_pc);
 `ifdef ISA_D
    // TODO: is this ifdef needed? Can't we always use 'extend()'?
    alu_outputs.val2      = extend (branch_target);    // For tandem verifier only
@@ -292,6 +295,7 @@ function ALU_Outputs fv_JAL (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    alu_outputs.op_stage2 = OP_Stage2_ALU;
    alu_outputs.rd        = inputs.decoded_instr.rd;
    alu_outputs.addr      = next_pc;
+   alu_outputs.addr_tag  = tagger.pc_tag(next_pc);
 `ifdef ISA_D
    alu_outputs.val1      = extend (ret_pc);
 `else
@@ -335,6 +339,7 @@ function ALU_Outputs fv_JALR (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger)
    alu_outputs.op_stage2 = OP_Stage2_ALU;
    alu_outputs.rd        = inputs.decoded_instr.rd;
    alu_outputs.addr      = next_pc;
+   alu_outputs.addr_tag = tagger.pc_tag(next_pc);
 `ifdef ISA_D
    alu_outputs.val1      = extend (ret_pc);
 `else
@@ -714,7 +719,9 @@ function ALU_Outputs fv_LD (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    IntXL s_rs2_val = unpack (inputs.rs2_val);
 
    IntXL  imm_s = extend (unpack (inputs.decoded_instr.imm12_I));
+   TagT  imm_tag = tagger.constant_tag(extend (inputs.decoded_instr.imm12_I));
    WordXL eaddr = pack (s_rs1_val + imm_s);
+   let addr_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData {data: extend (inputs.decoded_instr.imm12_I), tag: imm_tag }, eaddr);
 
    let funct3 = inputs.decoded_instr.funct3;
 
@@ -746,6 +753,7 @@ function ALU_Outputs fv_LD (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    alu_outputs.op_stage2 = OP_Stage2_LD;
    alu_outputs.rd        = inputs.decoded_instr.rd;
    alu_outputs.addr      = eaddr;
+   alu_outputs.addr_tag  = addr_tag;
 `ifdef ISA_F
    alu_outputs.rd_in_fpr = (opcode == op_LOAD_FP);
 `endif
@@ -779,6 +787,9 @@ function ALU_Outputs fv_ST (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    IntXL  imm_s     = extend (unpack (inputs.decoded_instr.imm12_S));
    WordXL eaddr     = pack (s_rs1_val + imm_s);
 
+   TagT   imm_tag   = tagger.constant_tag(extend (inputs.decoded_instr.imm12_I));
+   let addr_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData {data: extend (inputs.decoded_instr.imm12_I), tag: imm_tag }, eaddr);
+
    let opcode = inputs.decoded_instr.opcode;
    let funct3 = inputs.decoded_instr.funct3;
    Bool legal_ST = (   (funct3 == f3_SB)
@@ -806,6 +817,7 @@ function ALU_Outputs fv_ST (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
                                                       : CONTROL_TRAP);
    alu_outputs.op_stage2 = OP_Stage2_ST;
    alu_outputs.addr      = eaddr;
+   alu_outputs.addr_tag  = addr_tag;
 
    // The rs2_val would depend on the combination F/D-RV32/64 when FD is enabled
 `ifdef ISA_F
@@ -1111,11 +1123,14 @@ function ALU_Outputs fv_AMO (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
 		       || ((xlen == 64) && (funct3 == f3_AMO_D)) );
 
    let eaddr = inputs.rs1_val;
+   let addr_tag = inputs.rs1_tag;
 
    let alu_outputs = alu_outputs_base;
    alu_outputs.control   = ((legal_f5 && legal_width) ? CONTROL_STRAIGHT : CONTROL_TRAP);
    alu_outputs.op_stage2 = OP_Stage2_AMO;
    alu_outputs.addr      = eaddr;
+   alu_outputs.addr_tag  = addr_tag;
+
    alu_outputs.val1      = zeroExtend (inputs.decoded_instr.funct7);
 `ifdef ISA_D
    alu_outputs.val2      = extend (inputs.rs2_val);

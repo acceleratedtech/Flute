@@ -184,6 +184,7 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 					       op_stage2     : alu_outputs.op_stage2,
 					       rd            : alu_outputs.rd,
 					       addr          : alu_outputs.addr,
+					       addr_tag      : alu_outputs.addr_tag,
 					       val1          : alu_outputs.val1,
 					       val2          : alu_outputs.val2,
 					       tag1          : alu_outputs.tag1,
@@ -221,6 +222,7 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 						     op_stage2: OP_Stage2_ALU,
 						     rd:        0,
 						     addr:      ?,
+						     addr_tag:  defaultValue,
 						     val1:      ?,
 						     val2:      ?,
 						     tag1:      defaultValue,
@@ -280,10 +282,12 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 	    tval = zeroExtend (rg_stage_input.instr);
 `endif
 	 end
-	 else if (alu_outputs.exc_code == exc_code_INSTR_ADDR_MISALIGNED)
+	 else if (alu_outputs.exc_code == exc_code_INSTR_ADDR_MISALIGNED) begin
 	    tval = alu_outputs.addr;                           // The branch target pc
-	 else if (alu_outputs.exc_code == exc_code_BREAKPOINT)
+         end
+	 else if (alu_outputs.exc_code == exc_code_BREAKPOINT) begin
 	    tval = rg_stage_input.pc;                          // The faulting virtual address
+         end
 
 	 let trap_info = Trap_Info {epc:      rg_stage_input.pc,
 				    exc_code: alu_outputs.exc_code,

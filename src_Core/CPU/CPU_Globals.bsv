@@ -368,6 +368,7 @@ typedef struct {
    RegName    rd;
    Addr       addr;     // Branch, jump: newPC
                         // Mem ops and AMOs: mem addr
+   TagT       addr_tag;
 `ifdef ISA_D
    // When D is enabled, the val from Stage1 to Stage2 should be sized to
    // max (sizeOf (WordXL), sizeOf (WordFL))
