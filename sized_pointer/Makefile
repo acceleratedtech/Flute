@@ -36,10 +36,10 @@ BSC_COMPILATION_FLAGS += \
 	-D INCLUDE_TANDEM_VERIF \
 	-D BRVF_TRACE \
 	-D XILINX_BSCAN  -D XILINX_XCVU9P  -D JTAG_TAP \
-	-D PUBLIC_ACCESS_POLICY
-#	-D SIZED_POINTER_POLICY
-#	-D USER_INFLUENCED_POLICY
+	-D SIZED_POINTER_POLICY
 #	-D OVERFLOW_POLICY
+#	-D USER_INFLUENCED_POLICY
+#	-D PUBLIC_ACCESS_POLICY
 
 # ================================================================
 # Search path for bsc for .bsv files
@@ -48,12 +48,12 @@ CORE_DIRS = $(REPO)/src_Core/CPU:$(REPO)/src_Core/Tagged:$(REPO)/src_Core/Taggin
 
 TESTBENCH_DIRS  = $(REPO)/src_Testbench/Fabrics/AXI4
 
-BSC_PATH = -p $(CORE_DIRS):src_BSV:$(TESTBENCH_DIRS):+:%/Libraries/TLM3:%/Libraries/Axi:%/Libraries/Axi4
+BSC_PATH = -p $(CORE_DIRS):$(REPO)/src_SSITH_P2/src_BSV:$(TESTBENCH_DIRS):+:%/Libraries/TLM3:%/Libraries/Axi:%/Libraries/Axi4
 
 # ----------------
 # Top-level file and module
 
-TOPFILE   = src_BSV/P2_Core.bsv
+TOPFILE   = $(REPO)/src_SSITH_P2/src_BSV/P2_Core.bsv
 TOPMODULE = mkP2_Core
 
 # ================================================================
@@ -80,6 +80,7 @@ compile:  build_dir  Verilog_RTL
 	@echo  "INFO: Generating RTL into Verilog_RTL ..."
 	bsc -u -elab -verilog  $(RTL_GEN_DIRS)  $(BSC_COMPILATION_FLAGS)  $(BSC_PATH)  $(TOPFILE)
 	@echo  "INFO: Generated RTL into Verilog_RTL"
+	@mkdir -p xilinx_ip/hdl/
 	cp  Verilog_RTL/*  xilinx_ip/hdl/
 	@echo  "INFO: Copied RTL from  Verilog_RTL/  to  xilinx_ip/hdl/"
 
