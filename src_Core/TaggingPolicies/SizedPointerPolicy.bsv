@@ -4,6 +4,7 @@
 import DefaultValue :: *;
 import Vector       :: *;
 
+import ISA_Decls       :: *;
 import TagMonitor_IFC      :: *;
 
 instance DefaultValue#(Struct2);
@@ -11,13 +12,13 @@ instance DefaultValue#(Struct2);
 endinstance
 
 
-typedef struct { Struct2 a; Bit#(64) aa;  } Struct1 deriving(Eq, Bits);
+typedef struct { Struct2 a; Bit#(XLEN) aa;  } Struct1 deriving(Eq, Bits);
 typedef struct { Bool is_valid; Bool is_ptr; Bit#(16) ptr_pos_size; Bit#(16) ptr_neg_size;  } Struct2 deriving(Eq, Bits,FShow);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct4 aaaaaaaaaa; Struct4 aaaaaaaaaaa; Bit#(64) aaaaaaaaaaaa;  } Struct3 deriving(Eq, Bits);
-typedef struct { Bit#(64) data; Struct2 tag;  } Struct4 deriving(Eq, Bits);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Bit#(64) aaaaaaaaaa;  } Struct5 deriving(Eq, Bits);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct4 aaaaaaaaaa;  } Struct6 deriving(Eq, Bits);
-typedef struct { Bool a; Bit#(64) aa; Bit#(64) aaa; Bit#(64) aaaa; Bit#(64) aaaaa; Bit#(64) aaaaaa; Bit#(64) aaaaaaa; Bit#(64) aaaaaaaa; Bit#(64) aaaaaaaaa; Struct4 aaaaaaaaaa; Bit#(64) aaaaaaaaaaa;  } Struct7 deriving(Eq, Bits);
+typedef struct { Bool a; Bit#(XLEN) aa; Bit#(XLEN) aaa; Bit#(XLEN) aaaa; Bit#(XLEN) aaaaa; Bit#(XLEN) aaaaaa; Bit#(XLEN) aaaaaaa; Bit#(XLEN) aaaaaaaa; Bit#(XLEN) aaaaaaaaa; Struct4 aaaaaaaaaa; Struct4 aaaaaaaaaaa; Bit#(XLEN) aaaaaaaaaaaa;  } Struct3 deriving(Eq, Bits);
+typedef struct { Bit#(XLEN) data; Struct2 tag;  } Struct4 deriving(Eq, Bits);
+typedef struct { Bool a; Bit#(XLEN) aa; Bit#(XLEN) aaa; Bit#(XLEN) aaaa; Bit#(XLEN) aaaaa; Bit#(XLEN) aaaaaa; Bit#(XLEN) aaaaaaa; Bit#(XLEN) aaaaaaaa; Bit#(XLEN) aaaaaaaaa; Bit#(XLEN) aaaaaaaaaa;  } Struct5 deriving(Eq, Bits);
+typedef struct { Bool a; Bit#(XLEN) aa; Bit#(XLEN) aaa; Bit#(XLEN) aaaa; Bit#(XLEN) aaaaa; Bit#(XLEN) aaaaaa; Bit#(XLEN) aaaaaaa; Bit#(XLEN) aaaaaaaa; Bit#(XLEN) aaaaaaaaa; Struct4 aaaaaaaaaa;  } Struct6 deriving(Eq, Bits);
+typedef struct { Bool a; Bit#(XLEN) aa; Bit#(XLEN) aaa; Bit#(XLEN) aaaa; Bit#(XLEN) aaaaa; Bit#(XLEN) aaaaaa; Bit#(XLEN) aaaaaaa; Bit#(XLEN) aaaaaaaa; Bit#(XLEN) aaaaaaaaa; Struct4 aaaaaaaaaa; Bit#(XLEN) aaaaaaaaaaa;  } Struct7 deriving(Eq, Bits);
 
 typedef struct { Struct2 a; Struct2 aa;  } Struct17 deriving(Eq, Bits);
 
@@ -36,7 +37,7 @@ module mkModule1 (Module1);
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Struct2 x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
         Struct2 x_4 = (x_2);
         let x_19 = ?;
         if (((x_2).is_valid) && ((x_2).is_ptr)) begin
@@ -161,17 +162,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -208,17 +209,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -255,17 +256,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -302,17 +303,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -349,17 +350,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -371,17 +372,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -393,17 +394,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -415,17 +416,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -437,17 +438,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -459,17 +460,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -481,17 +482,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -503,17 +504,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -525,17 +526,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -547,17 +548,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -569,17 +570,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -591,17 +592,17 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Struct4 x_12 = ((x_0).aaaaaaaaaaa);
-        Bit#(64) x_13 = ((x_0).aaaaaaaaaaaa);
+        Bit#(XLEN) x_13 = ((x_0).aaaaaaaaaaaa);
         let x_14 = default_sized_pointer_op(Struct17 {a : (x_11).tag, aa :
         (x_12).tag});
         Struct2 x_15 = (x_14);
@@ -613,15 +614,15 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Bit#(64) x_11 = ((x_0).aaaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_11 = ((x_0).aaaaaaaaaa);
         Struct2 x_12 = (Struct2 {is_valid : (Bool)'(False), is_ptr :
         (Bool)'(False), ptr_pos_size : (Bit#(16))'(16'h0), ptr_neg_size :
         (Bit#(16))'(16'h0)});
@@ -633,15 +634,15 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Bit#(64) x_11 = ((x_0).aaaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_11 = ((x_0).aaaaaaaaaa);
         Struct2 x_12 = (Struct2 {is_valid : (Bool)'(False), is_ptr :
         (Bool)'(False), ptr_pos_size : (Bit#(16))'(16'h0), ptr_neg_size :
         (Bit#(16))'(16'h0)});
@@ -653,15 +654,15 @@ module
         ((Struct2)'(Struct2 {is_valid: False, is_ptr: False, ptr_pos_size: 16'h0, ptr_neg_size: 16'h0}));
         
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
-        Bit#(64) x_11 = ((x_0).aaaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_11 = ((x_0).aaaaaaaaaa);
         Struct2 x_12 = (Struct2 {is_valid : (Bool)'(False), is_ptr :
         (Bool)'(False), ptr_pos_size : (Bit#(16))'(16'h0), ptr_neg_size :
         (Bit#(16))'(16'h0)});
@@ -671,14 +672,14 @@ module
     method Bool is_legal_next_pc (Struct6 x_0);
         Bool x_1 = ((Bool)'(False));
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
         Bool x_12 = ((Bool)'(True));
         return x_12;
@@ -687,16 +688,16 @@ module
     method Bool is_legal_store_address (Struct7 x_0);
         Bool x_1 = ((Bool)'(False));
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
-        Bit#(64) x_12 = ((x_0).aaaaaaaaaaa);
+        Bit#(XLEN) x_12 = ((x_0).aaaaaaaaaaa);
         Bool x_13 = (((! (x_2)) || ((! (((x_11).tag).is_valid)) ||
         (((x_11).tag).is_ptr)) ? ((Bool)'(True)) : ((Bool)'(False))));
         return x_13;
@@ -705,16 +706,16 @@ module
     method Bool is_legal_load_address (Struct7 x_0);
         Bool x_1 = ((Bool)'(False));
         Bool x_2 = ((x_0).a);
-        Bit#(64) x_3 = ((x_0).aa);
-        Bit#(64) x_4 = ((x_0).aaa);
-        Bit#(64) x_5 = ((x_0).aaaa);
-        Bit#(64) x_6 = ((x_0).aaaaa);
-        Bit#(64) x_7 = ((x_0).aaaaaa);
-        Bit#(64) x_8 = ((x_0).aaaaaaa);
-        Bit#(64) x_9 = ((x_0).aaaaaaaa);
-        Bit#(64) x_10 = ((x_0).aaaaaaaaa);
+        Bit#(XLEN) x_3 = ((x_0).aa);
+        Bit#(XLEN) x_4 = ((x_0).aaa);
+        Bit#(XLEN) x_5 = ((x_0).aaaa);
+        Bit#(XLEN) x_6 = ((x_0).aaaaa);
+        Bit#(XLEN) x_7 = ((x_0).aaaaaa);
+        Bit#(XLEN) x_8 = ((x_0).aaaaaaa);
+        Bit#(XLEN) x_9 = ((x_0).aaaaaaaa);
+        Bit#(XLEN) x_10 = ((x_0).aaaaaaaaa);
         Struct4 x_11 = ((x_0).aaaaaaaaaa);
-        Bit#(64) x_12 = ((x_0).aaaaaaaaaaa);
+        Bit#(XLEN) x_12 = ((x_0).aaaaaaaaaaa);
         Bool x_13 = (((! (x_2)) || ((! (((x_11).tag).is_valid)) ||
         (((x_11).tag).is_ptr)) ? ((Bool)'(True)) : ((Bool)'(False))));
         return x_13;
