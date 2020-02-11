@@ -665,7 +665,7 @@ Bit #(3) f3_FSW         = 3'b010;
 Bit #(3) f3_FSD         = 3'b011;
 Bit #(3) f3_FLW         = 3'b010;
 Bit #(3) f3_FLD         = 3'b011;
-
+Bit #(3) f3_LDST_TAG    = 3'b111;
 // Fused FP Multiply Add/Sub instructions
 Opcode   op_FMADD       = 7'b10_00_011;
 Opcode   op_FMSUB       = 7'b10_00_111;

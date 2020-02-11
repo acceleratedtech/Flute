@@ -276,11 +276,15 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 `endif
                // A FLD result
                end
+               else if (funct3 == f3_LDST_TAG) begin
+                  //data_to_stage3.rd_val = 0;
+                  data_to_stage3.rd_tag = unpack(truncate(dcache.word64));
+	       end
 	       else begin
                   data_to_stage3.rd_val = dcache.word64;
+	          data_to_stage3.rd_tag = tagger.unknown_tag(data_to_stage3.rd_val);
                end
 
-	       data_to_stage3.rd_tag = tagger.unknown_tag(data_to_stage3.rd_val);
             end
 
 
@@ -581,6 +585,9 @@ module mkCPU_Stage2 #(Bit #(4)         verbosity,
 	    else if (x.op_stage2 == OP_Stage2_ST) begin
 	        cache_op = CACHE_ST;
 		is_legal = tagger.is_legal_store_address(TaggedData{data: x.addr, tag: x.addr_tag}, x.pc);
+                if (funct3 == f3_LDST_TAG) begin
+		   x.val2 = extend(pack(x.tag2));
+		end
             end
 `ifdef ISA_A
 	    else if (x.op_stage2 == OP_Stage2_AMO) begin
