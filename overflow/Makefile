@@ -83,6 +83,7 @@ compile:  build_dir  Verilog_RTL
 	@mkdir -p xilinx_ip/hdl
 	cp -r ../src_SSITH_P2/xilinx_ip/{component.xml,src,xgui} xilinx_ip
 	cp -r ../src_SSITH_P2/xilinx_ip/hdl/[A-Z]* xilinx_ip/hdl
+	cp -v  ../src_SSITH_P2/Verilog_RTL/mkP2_Core.v Verilog_RTL
 	cp  Verilog_RTL/*  xilinx_ip/hdl/
 	@echo  "INFO: Copied RTL from  Verilog_RTL/  to  xilinx_ip/hdl/"
 
