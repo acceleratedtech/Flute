@@ -203,6 +203,10 @@ function Bit #(64) fn_extract_and_extend_bytes (Bit #(3) f3, WordXL byte_addr, B
       f3_LD: case (addr_lsbs)
 		'h0: result = word64;
 	     endcase
+
+      f3_LDST_TAG: case (addr_lsbs)
+		'h0: result = word64;
+	     endcase
    endcase
    return result;
 endfunction
@@ -231,6 +235,7 @@ function Bit #(64) fn_extend_bytes (Bit #(3) f3, Bit #(64) word64);
       f3_LWU: result = zeroExtend (word64 [31: 0]);
 
       f3_LD:  result = word64;
+      f3_LDST_TAG:  result = word64;
    endcase
 
    return result;

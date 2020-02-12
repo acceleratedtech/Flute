@@ -59,7 +59,7 @@ interface GPR_RegFile_IFC;
 
    // GPR write
    (* always_ready *)
-   method Action write_rd (RegName rd, RegValue rd_val);
+   method Action write_rd (RegName rd, RegValue rd_val, Bool write_tag_only);
 
 endinterface
 
@@ -81,7 +81,8 @@ module mkGPR_RegFile (GPR_RegFile_IFC);
 
    // General Purpose Registers
    // TODO: can we use Reg [0] for some other purpose?
-   RegFile #(RegName, RegValue) regfile <- mkRegFileFull;
+   RegFile #(RegName, Word) regfile_data <- mkRegFileFull;
+   RegFile #(RegName, TagT) regfile_tag <- mkRegFileFull;
 
    // ----------------------------------------------------------------
    // Reset.
@@ -102,7 +103,8 @@ module mkGPR_RegFile (GPR_RegFile_IFC);
 
    rule rl_reset_loop (rg_state == RF_RESETTING);
 `ifdef INCLUDE_TANDEM_VERIF
-      regfile.upd (rg_j, 0);
+      regfile_data.upd (rg_j, 0);
+      regfile_tag.upd (rg_j, defaultValue);
       rg_j <= rg_j + 1;
       if (rg_j == 31)
 	 rg_state <= RF_RUNNING;
@@ -135,21 +137,26 @@ module mkGPR_RegFile (GPR_RegFile_IFC);
 
    // GPR read
    method RegValue read_rs1 (RegName rs1);
-      return ((rs1 == 0) ? 0 : regfile.sub (rs1));
+      return ((rs1 == 0) ? 0 : RegValue{data: regfile_data.sub (rs1), tag: regfile_tag.sub (rs1)});
    endmethod
 
    // GPR read
    method RegValue read_rs1_port2 (RegName rs1);        // For debugger access only
-      return ((rs1 == 0) ? 0 : regfile.sub (rs1));
+      return ((rs1 == 0) ? 0 : RegValue{data: regfile_data.sub (rs1), tag: regfile_tag.sub (rs1)});
    endmethod
 
    method RegValue read_rs2 (RegName rs2);
-      return ((rs2 == 0) ? 0 : regfile.sub (rs2));
+      return ((rs2 == 0) ? 0 : RegValue{data: regfile_data.sub (rs2), tag: regfile_tag.sub (rs2)});
    endmethod
 
    // GPR write
-   method Action write_rd (RegName rd, RegValue rd_val);
-      if (rd != 0) regfile.upd (rd, rd_val);
+   method Action write_rd (RegName rd, RegValue rd_val, Bool write_tag_only);
+       if (rd != 0) begin
+           if (!write_tag_only) begin
+               regfile_data.upd (rd, rd_val.data);
+           end
+           regfile_tag.upd (rd, rd_val.tag);
+       end
    endmethod
 
 endmodule

@@ -151,6 +151,18 @@ function Addr fall_through_pc (ALU_Inputs  inputs);
    return next_pc;
 endfunction
 
+function TagT fall_through_pc_tag (ALU_Inputs  inputs, TagMonitor#(XLEN, TagT) tagger);
+   Addr offset = 4;
+`ifdef ISA_C
+   if (! inputs.is_i32_not_i16)
+      offset = 2;
+`endif
+   Addr next_pc = inputs.pc + offset;
+   let pc_tag = tagger.pc_tag(inputs.pc);
+   let offset_tag = tagger.constant_tag(offset);
+   return tagger.alu_add(TaggedData {data: inputs.pc, tag: pc_tag }, TaggedData { data: offset, tag: offset_tag}, next_pc);
+endfunction
+
 // ================================================================
 // Alternate implementation of shifts using multiplication in DSPs
 
@@ -233,6 +245,10 @@ function ALU_Outputs fv_BRANCH (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagge
    Bool  branch_taken  = False;
    Bool  trap          = False;
 
+   let pc_tag = tagger.pc_tag(inputs.pc);
+   let offset_tag = tagger.constant_tag(pack(offset));
+   let branch_target_tag = tagger.alu_add(TaggedData {data: inputs.pc, tag: pc_tag }, TaggedData { data: pack(offset), tag: offset_tag}, branch_target);
+
    let funct3 = inputs.decoded_instr.funct3;
    if      (funct3 == f3_BEQ)  branch_taken = (rs1_val  == rs2_val);
    else if (funct3 == f3_BNE)  branch_taken = (rs1_val  != rs2_val);
@@ -255,13 +271,13 @@ function ALU_Outputs fv_BRANCH (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagge
 
    let alu_outputs = alu_outputs_base;
    let next_pc     = (branch_taken ? branch_target : fall_through_pc (inputs));
+   let next_pc_tag = (branch_taken ? branch_target_tag : fall_through_pc_tag (inputs, tagger));
    alu_outputs.control   = (trap ? CONTROL_TRAP : (branch_taken ? CONTROL_BRANCH : CONTROL_STRAIGHT));
    alu_outputs.exc_code  = exc_code;
    alu_outputs.op_stage2 = OP_Stage2_ALU;
    alu_outputs.rd        = 0;
-   //FIXME: should there be a tag with this?
    alu_outputs.addr      = next_pc;
-   alu_outputs.addr_tag = tagger.pc_tag(next_pc);
+   alu_outputs.addr_tag = next_pc_tag;
 `ifdef ISA_D
    // TODO: is this ifdef needed? Can't we always use 'extend()'?
    alu_outputs.val2      = extend (branch_target);    // For tandem verifier only
@@ -283,6 +299,11 @@ function ALU_Outputs fv_JAL (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    IntXL offset  = extend (unpack (inputs.decoded_instr.imm21_UJ));
    Addr  next_pc = pack (unpack (inputs.pc) + offset);
    Addr  ret_pc  = fall_through_pc (inputs);
+   let ret_pc_tag = fall_through_pc_tag (inputs, tagger);
+
+   let pc_tag = tagger.pc_tag(inputs.pc);
+   let offset_tag = tagger.constant_tag(pack(offset));
+   let next_pc_tag = tagger.alu_add(TaggedData {data: inputs.pc, tag: pc_tag }, TaggedData { data: pack(offset), tag: offset_tag}, next_pc);
 
    Bool misaligned_target = (next_pc [1] == 1'b1);
 `ifdef ISA_C
@@ -295,13 +316,13 @@ function ALU_Outputs fv_JAL (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    alu_outputs.op_stage2 = OP_Stage2_ALU;
    alu_outputs.rd        = inputs.decoded_instr.rd;
    alu_outputs.addr      = next_pc;
-   alu_outputs.addr_tag  = tagger.pc_tag(next_pc);
+   alu_outputs.addr_tag  = next_pc_tag;
 `ifdef ISA_D
    alu_outputs.val1      = extend (ret_pc);
 `else
    alu_outputs.val1      = ret_pc;
 `endif
-   alu_outputs.tag1      = tagger.pc_tag(ret_pc);
+   alu_outputs.tag1      = ret_pc_tag;
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (next_pc,
 					  fv_trace_isize (inputs),
@@ -324,6 +345,10 @@ function ALU_Outputs fv_JALR (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger)
    IntXL offset    = extend (unpack (inputs.decoded_instr.imm12_I));
    Addr  next_pc   = pack (s_rs1_val + offset);
    Addr  ret_pc    = fall_through_pc (inputs);
+   let ret_pc_tag = fall_through_pc_tag (inputs, tagger);
+
+   let offset_tag = tagger.constant_tag(pack(offset));
+   let next_pc_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(offset), tag: offset_tag}, next_pc);
 
    // next_pc [0] should be cleared
    next_pc [0] = 1'b0;
@@ -339,13 +364,13 @@ function ALU_Outputs fv_JALR (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger)
    alu_outputs.op_stage2 = OP_Stage2_ALU;
    alu_outputs.rd        = inputs.decoded_instr.rd;
    alu_outputs.addr      = next_pc;
-   alu_outputs.addr_tag = tagger.pc_tag(next_pc);
+   alu_outputs.addr_tag = next_pc_tag;
 `ifdef ISA_D
    alu_outputs.val1      = extend (ret_pc);
 `else
    alu_outputs.val1      = ret_pc;
 `endif
-   alu_outputs.tag1      = tagger.pc_tag(ret_pc);
+   alu_outputs.tag1      = ret_pc_tag;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (next_pc,
@@ -674,7 +699,7 @@ function ALU_Outputs fv_LUI (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
 `else
    alu_outputs.val1      = rd_val;
 `endif
-   alu_outputs.tag1      = defaultValue;
+   alu_outputs.tag1      = tagger.constant_tag(rd_val);
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -690,6 +715,10 @@ function ALU_Outputs fv_AUIPC (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger
    IntXL  pc_s   = unpack (inputs.pc);
    WordXL rd_val = pack (pc_s + iv);
 
+   let pc_tag = tagger.pc_tag(inputs.pc);
+   let imm_tag = tagger.constant_tag(pack(iv));
+   let rd_tag = tagger.alu_add(TaggedData {data: inputs.pc, tag: pc_tag }, TaggedData { data: pack(iv), tag: imm_tag}, rd_val);
+
    let alu_outputs       = alu_outputs_base;
    alu_outputs.op_stage2 = OP_Stage2_ALU;
    alu_outputs.rd        = inputs.decoded_instr.rd;
@@ -698,7 +727,7 @@ function ALU_Outputs fv_AUIPC (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger
 `else
    alu_outputs.val1      = rd_val;
 `endif
-   alu_outputs.tag1      = tagger.pc_tag(alu_outputs.val1);
+   alu_outputs.tag1      = rd_tag;
 
    // Normal trace output (if no trap)
    alu_outputs.trace_data = mkTrace_I_RD (fall_through_pc (inputs),
@@ -738,6 +767,7 @@ function ALU_Outputs fv_LD (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
 `ifdef ISA_D
 		    || (funct3 == f3_FLD)
 `endif
+            || (funct3 == f3_LDST_TAG)
 		    );
 
    Bool legal_FP_LD = True;
@@ -804,6 +834,7 @@ function ALU_Outputs fv_ST (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
 `ifdef ISA_D
 		    || (funct3 == f3_FSD)
 `endif
+            || (funct3 == f3_LDST_TAG)
 		    );
 
    Bool legal_FP_ST = True;

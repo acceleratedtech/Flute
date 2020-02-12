@@ -294,10 +294,66 @@ module mkCPU_Stage1 #(Bit #(4)         verbosity,
 				    tval:     tval};
 
 	 let fall_through_pc = rg_stage_input.pc + (rg_stage_input.is_i32_not_i16 ? 4 : 2);
+         let offset = rg_stage_input.is_i32_not_i16 ? 4 : 2;
+	 let offset_tag = tagger.constant_tag(offset);
+         let pc_tag = tagger.pc_tag(rg_stage_input.pc);
+         let fall_through_pc_tag = tagger.alu_add(TaggedData {data: rg_stage_input.pc, tag: pc_tag}, TaggedData { data: offset, tag: offset_tag }, fall_through_pc);
+
 	 let next_pc = ((alu_outputs.control == CONTROL_BRANCH)
 			? alu_outputs.addr
 			: fall_through_pc);
+	 let next_pc_tag = ((alu_outputs.control == CONTROL_BRANCH)
+			? alu_outputs.addr_tag
+			: fall_through_pc_tag);
 	 let redirect = (next_pc != rg_stage_input.pred_pc);
+
+         // Check for tagging policy exceptions
+	 let control = alu_outputs.control;
+	 if (!tagger.is_legal_next_pc(TaggedData {data: next_pc, tag: next_pc_tag})) begin
+	    // illegal next pc according to tagging policy
+            if (control != CONTROL_TRAP) begin
+                control = CONTROL_TRAP;
+                ostatus = OSTATUS_NONPIPE;
+                trap_info.exc_code = exc_code_TAG_NEXT_PC_FAULT;
+            end
+	 end
+         if (alu_outputs.op_stage2 == OP_Stage2_LD) begin
+             if (!tagger.is_legal_load_address(TaggedData {data: alu_outputs.addr, tag: alu_outputs.addr_tag}, rg_stage_input.pc)) begin
+                if (control != CONTROL_TRAP) begin
+                    control = CONTROL_TRAP;
+                    ostatus = OSTATUS_NONPIPE;
+                    trap_info.exc_code = exc_code_TAG_LOAD_FAULT;
+                end
+             end
+         end
+         if (alu_outputs.op_stage2 == OP_Stage2_ST) begin
+             if (!tagger.is_legal_store_address(TaggedData {data: alu_outputs.addr, tag: alu_outputs.addr_tag}, rg_stage_input.pc)) begin
+                if (control != CONTROL_TRAP) begin
+                    control = CONTROL_TRAP;
+                    ostatus = OSTATUS_NONPIPE;
+                    trap_info.exc_code = exc_code_TAG_STORE_FAULT;
+                end
+             end
+         end
+`ifdef ISA_A
+         if (alu_outputs.op_stage2 == OP_Stage2_AMO) begin
+             // for now treat this as a load and a store
+             if (!tagger.is_legal_load_address(TaggedData {data: alu_outputs.addr, tag: alu_outputs.addr_tag}, rg_stage_input.pc)) begin
+                if (control != CONTROL_TRAP) begin
+                    control = CONTROL_TRAP;
+                    ostatus = OSTATUS_NONPIPE;
+                    trap_info.exc_code = exc_code_TAG_LOAD_FAULT;
+                end
+             end
+             if (!tagger.is_legal_store_address(TaggedData {data: alu_outputs.addr, tag: alu_outputs.addr_tag}, rg_stage_input.pc)) begin
+                if (control != CONTROL_TRAP) begin
+                    control = CONTROL_TRAP;
+                    ostatus = OSTATUS_NONPIPE;
+                    trap_info.exc_code = exc_code_TAG_STORE_FAULT;
+                end
+             end
+         end
+`endif
 
 	 output_stage1.ostatus        = ostatus;
 	 output_stage1.control        = alu_outputs.control;
