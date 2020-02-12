@@ -989,7 +989,7 @@ module mkCPU (CPU_IFC);
 
 	 // Writeback to GPR file
 	 let new_rd_val = csr_val;
-	 gpr_regfile.write_rd (rd, RegValue { data: new_rd_val, tag: defaultValue });
+	 gpr_regfile.write_rd (rd, RegValue { data: new_rd_val, tag: defaultValue }, False);
 
 	 // Writeback to CSR file
 	 let new_csr_val <- csr_regfile.mav_csr_write (csr_addr, rs1_val);
@@ -1094,7 +1094,7 @@ module mkCPU (CPU_IFC);
 
 	 // Writeback to GPR file
 	 let new_rd_val = csr_val;
-	 gpr_regfile.write_rd (rd, RegValue { data: new_rd_val, tag: defaultValue });
+	 gpr_regfile.write_rd (rd, RegValue { data: new_rd_val, tag: defaultValue }, False);
 
 	 // Writeback to CSR file, but only if rs1 != 0
 	 let x = (  ((funct3 == f3_CSRRS) || (funct3 == f3_CSRRSI))
@@ -1731,7 +1731,7 @@ module mkCPU (CPU_IFC);
       let req <- pop (f_gpr_reqs);
       Bit #(5) regname = req.address;
       let data = req.data;
-      gpr_regfile.write_rd (regname, RegValue { data: data, tag: defaultValue });
+      gpr_regfile.write_rd (regname, RegValue { data: data, tag: defaultValue }, False);
 
       let rsp = DM_CPU_Rsp {ok: True, data: ?};
       f_gpr_rsps.enq (rsp);

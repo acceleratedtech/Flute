@@ -166,6 +166,7 @@ module mkCPU_Stage3 #(Bit #(4)         verbosity,
       action
 	 // Writeback Rd if valid
 	 if (rg_stage3.rd_valid) begin
+            Bool is_ld_tag_inst = (rg_stage3.instr[6:0] == op_LOAD) && (rg_stage3.instr[14:12] == f3_LDST_TAG);
 `ifdef ISA_F
             // Write to FPR
             if (rg_stage3.rd_in_fpr)
@@ -177,14 +178,14 @@ module mkCPU_Stage3 #(Bit #(4)         verbosity,
             // Write to GPR in a FD system
             else
 `ifdef RV64
-               gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: rg_stage3.rd_val, tag: rg_stage3.rd_tag });
+               gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: rg_stage3.rd_val, tag: rg_stage3.rd_tag }, is_ld_tag_inst);
 `endif
 `ifdef RV32
-               gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: truncate (rg_stage3.rd_val), tag: rg_stage3.rd_tag });
+               gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: truncate (rg_stage3.rd_val), tag: rg_stage3.rd_tag }, is_ld_tag_inst);
 `endif
 `else
             // Write to GPR in a non-FD system
-            gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: rg_stage3.rd_val, tag: rg_stage3.rd_tag });
+            gpr_regfile.write_rd (rg_stage3.rd, RegValue { data: rg_stage3.rd_val, tag: rg_stage3.rd_tag }, is_ld_tag_inst);
 `endif
 
 	    if (verbosity > 1)

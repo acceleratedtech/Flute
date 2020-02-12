@@ -324,6 +324,7 @@ function Word64_Set fn_update_word64_set (Word64_Set   old_word64_set,
 		 'h4 : new_word64 [63:32] = word64 [31:0];
 	      endcase
       f3_SD:  new_word64 = word64;
+      f3_LDST_TAG:  new_word64 = word64;
    endcase
    new_word64_set [way] = new_word64;
    return new_word64_set;
