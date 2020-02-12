@@ -495,6 +495,7 @@ function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs, TagMonitor#(XLEN, TagT
 
    IntXL  s_rs2_val_local = s_rs2_val;
    WordXL rs2_val_local   = rs2_val;
+   TagT rs2_tag_local = inputs.rs2_tag;
 
    Bit #(1) instr_b30  = inputs.instr [30];
    Bool     subtract   = ((inputs.decoded_instr.opcode == op_OP) && (instr_b30 == 1'b1));
@@ -502,6 +503,7 @@ function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs, TagMonitor#(XLEN, TagT
    if (inputs.decoded_instr.opcode == op_OP_IMM) begin
       s_rs2_val_local = extend (unpack (inputs.decoded_instr.imm12_I));
       rs2_val_local   = pack (s_rs2_val_local);
+      rs2_tag_local = tagger.constant_tag(pack(s_rs2_val_local));
    end
 
    let  funct3 = inputs.decoded_instr.funct3;
@@ -511,31 +513,31 @@ function ALU_Outputs fv_OP_and_OP_IMM (ALU_Inputs inputs, TagMonitor#(XLEN, TagT
 
    if      ((funct3 == f3_ADDI) && (! subtract)) begin
       rd_val = pack (s_rs1_val + s_rs2_val_local);
-      rd_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: rs2_tag_local }, rd_val);
    end
    else if ((funct3 == f3_ADDI) && (subtract)) begin
       rd_val = pack (s_rs1_val - s_rs2_val_local);
-      rd_tag = tagger.alu_sub(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_sub(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: rs2_tag_local }, rd_val);
    end
    else if (funct3 == f3_SLTI) begin
       rd_val = ((s_rs1_val < s_rs2_val_local) ? 1 : 0);
-      rd_tag = tagger.alu_slt(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_slt(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: rs2_tag_local }, rd_val);
    end
    else if (funct3 == f3_SLTIU) begin
       rd_val = ((rs1_val  < rs2_val_local)  ? 1 : 0);
-      rd_tag = tagger.alu_sltu(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_sltu(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(rs2_val_local), tag: rs2_tag_local }, rd_val);
    end
    else if (funct3 == f3_XORI) begin
       rd_val = pack (s_rs1_val ^ s_rs2_val_local);
-      rd_tag = tagger.alu_xor(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_xor(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: rs2_tag_local }, rd_val);
    end
    else if (funct3 == f3_ORI) begin
       rd_val = pack (s_rs1_val | s_rs2_val_local);
-      rd_tag = tagger.alu_or(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_or(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: rs2_tag_local }, rd_val);
    end
    else if (funct3 == f3_ANDI) begin
       rd_val = pack (s_rs1_val & s_rs2_val_local);
-      rd_tag = tagger.alu_and(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_and(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(s_rs2_val_local), tag: rs2_tag_local }, rd_val);
    end
    else
       trap = True;
@@ -570,6 +572,9 @@ function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) ta
    Bit #(5) shamt       = truncate (inputs.decoded_instr.imm12_I);
    Bool     shamt5_is_0 = (inputs.instr [25] == 1'b0);
 
+   IntXL    immi_value  = extend(unpack(inputs.decoded_instr.imm12_I));
+   TagT     immi_tag    = tagger.constant_tag(pack(immi_value));
+
    let    funct3 = inputs.decoded_instr.funct3;
    Bool   trap   = False;
    WordXL rd_val = ?;
@@ -580,12 +585,12 @@ function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) ta
       IntXL  sum       = s_rs1_val + s_rs2_val;
       WordXL tmp       = pack (sum);
       rd_val           = signExtend (tmp [31:0]);
-      rd_tag = tagger.alu_addw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_addw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(immi_value), tag: immi_tag }, rd_val);
    end
    else if ((funct3 == f3_SLLIW) && shamt5_is_0) begin
       Bit #(32) tmp = truncate (rs1_val);
       rd_val = signExtend (tmp << shamt);
-      rd_tag = tagger.alu_sllw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: inputs.rs2_val, tag: inputs.rs2_tag }, rd_val);
+      rd_tag = tagger.alu_sllw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData { data: pack(immi_value), tag: immi_tag }, rd_val);
    end
    else if ((funct3 == f3_SRxIW) && shamt5_is_0) begin
       Bit #(1) instr_b30 = inputs.instr [30];
@@ -593,12 +598,14 @@ function ALU_Outputs fv_OP_IMM_32 (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) ta
 	 // SRLIW
 	 Bit #(32) tmp = truncate (rs1_val);
 	 rd_val = signExtend (tmp >> shamt);
+         rd_tag = tagger.alu_srlw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag}, TaggedData {data: pack(immi_value), tag: immi_tag }, rd_val);
       end
       else begin
 	 // SRAIW
 	 Int #(32) s_tmp = unpack (rs1_val [31:0]);
 	 Bit #(32) tmp   = pack (s_tmp >> shamt);
 	 rd_val = signExtend (tmp);
+         rd_tag = tagger.alu_sraw(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag}, TaggedData {data: pack(immi_value), tag: immi_tag }, rd_val);
       end
    end
    else
@@ -748,9 +755,9 @@ function ALU_Outputs fv_LD (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    IntXL s_rs2_val = unpack (inputs.rs2_val);
 
    IntXL  imm_s = extend (unpack (inputs.decoded_instr.imm12_I));
-   TagT  imm_tag = tagger.constant_tag(extend (inputs.decoded_instr.imm12_I));
+   TagT  imm_tag = tagger.constant_tag(pack(imm_s));
    WordXL eaddr = pack (s_rs1_val + imm_s);
-   let addr_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData {data: extend (inputs.decoded_instr.imm12_I), tag: imm_tag }, eaddr);
+   let addr_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData {data: pack(imm_s), tag: imm_tag }, eaddr);
 
    let funct3 = inputs.decoded_instr.funct3;
 
@@ -817,8 +824,8 @@ function ALU_Outputs fv_ST (ALU_Inputs inputs, TagMonitor#(XLEN, TagT) tagger);
    IntXL  imm_s     = extend (unpack (inputs.decoded_instr.imm12_S));
    WordXL eaddr     = pack (s_rs1_val + imm_s);
 
-   TagT   imm_tag   = tagger.constant_tag(extend (inputs.decoded_instr.imm12_I));
-   let addr_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData {data: extend (inputs.decoded_instr.imm12_I), tag: imm_tag }, eaddr);
+   TagT   imm_tag   = tagger.constant_tag(pack(imm_s));
+   let addr_tag = tagger.alu_add(TaggedData {data: inputs.rs1_val, tag: inputs.rs1_tag }, TaggedData {data: pack(imm_s), tag: imm_tag }, eaddr);
 
    let opcode = inputs.decoded_instr.opcode;
    let funct3 = inputs.decoded_instr.funct3;
