@@ -59,12 +59,16 @@ module mkRISCV_MBox (RISCV_MBox_IFC);
    Reg #(Bit #(4)) cfg_verbosity <- mkConfigReg (0);
 
    Reg #(State)     rg_state <- mkRegU;
+   Reg #(Bool)      rg_valid  <- mkRegU;
 
    Reg #(Bool)      rg_is_OP_not_OP_32 <- mkRegU;
    Reg #(Bit #(3))  rg_f3              <- mkRegU;
    Reg #(WordXL)    rg_v1              <- mkRegU;
    Reg #(WordXL)    rg_v2              <- mkRegU;
    Reg #(WordXL)    rg_result          <- mkRegU;
+
+   Wire #(WordXL)    dw_result         <- mkDWire(?);
+   Wire #(Bool)      dw_valid          <- mkDWire(False);
 
    IntDiv_IFC #(XLEN) intDiv <- mkIntDiv (rg_v1, rg_v2);
 
@@ -75,9 +79,6 @@ module mkRISCV_MBox (RISCV_MBox_IFC);
    IntMul_IFC#(32) intMul <- mkIntMul_32;
 `endif
 `endif
-
-   Reg #(Bool)    dw_valid  <- mkDWire (False);
-   Reg #(WordXL)  dw_result <- mkDWire (?);
 
    // ----------------------------------------------------------------
    // MUL family: SYNTH implementation
@@ -110,15 +111,15 @@ module mkRISCV_MBox (RISCV_MBox_IFC);
 
       rg_result <= result;
       rg_state  <= STATE_MUL2;
-   endrule
-
-   rule rl_mul2 (rg_state == STATE_MUL2);
-      let result = rg_result;
-      dw_valid  <= True;
-      dw_result <= result;
+      rg_valid  <= True;
    endrule
 
 `endif
+
+  rule rl_done;
+     dw_valid  <= rg_valid;
+     dw_result <= rg_result;
+  endrule
 
    // ----------------------------------------------------------------
    // MUL family: SERIAL implementation
@@ -150,8 +151,8 @@ module mkRISCV_MBox (RISCV_MBox_IFC);
 	 result = 0; // to keep bsc happy
       end
 
-      dw_valid  <= True;
-      dw_result <= result;
+      rg_valid  <= True;
+      rg_result <= result;
    endrule
 `endif
 
@@ -168,8 +169,8 @@ module mkRISCV_MBox (RISCV_MBox_IFC);
 	 result = signExtend (result [31:0]);
 `endif
 
-      dw_valid  <= True;
-      dw_result <= result;
+      rg_valid  <= True;
+      rg_result <= result;
    endrule
 
    // ================================================================
@@ -214,6 +215,7 @@ module mkRISCV_MBox (RISCV_MBox_IFC);
       // MUL, MULH, MULHU, MULHSU
       if (f3 [2] == 1'b0) begin
 	 rg_state <= STATE_MUL1;
+	 rg_valid <= False;
 
 `ifdef MULT_SERIAL
 	 Bool s1, s2;

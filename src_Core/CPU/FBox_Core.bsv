@@ -133,10 +133,10 @@ endfunction
 (* synthesize *)
 module mkFBox_Core (FBox_Core_IFC);
 
-   FIFOF #(Token)          resetReqsF           <- mkFIFOF;
-   FIFOF #(Token)          resetRspsF           <- mkFIFOF;
+   FIFOF #(Token)          resetReqsF           <- mkFIFOF1;
+   FIFOF #(Token)          resetRspsF           <- mkFIFOF1;
 
-   FIFOF #(Bool)           frmFpuF              <- mkFIFOF;
+   FIFOF #(Bool)           frmFpuF              <- mkFIFOF1;
 
    Reg   #(FBoxState)      stateR               <- mkReg (FBOX_RST);
 

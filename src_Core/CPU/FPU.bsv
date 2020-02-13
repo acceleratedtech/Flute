@@ -46,14 +46,14 @@ module mkFPU ( FPU_IFC );
 
    Server#( Tuple4#(Maybe#(FDouble),FDouble,FDouble,RoundMode), FpuR ) fpu_madd   <- mkFloatingPointFusedMultiplyAccumulate;
 
-   FIFOF #(Token)          resetReqsF           <- mkFIFOF;
-   FIFOF #(Token)          resetRspsF           <- mkFIFOF;
+   FIFOF #(Token)          resetReqsF           <- mkFIFOF1;
+   FIFOF #(Token)          resetRspsF           <- mkFIFOF1;
 
-   FIFOF#( Fpu_Req )  iFifo        <- mkFIFOF; // TODO: bypass fifos?
-   FIFOF#( Fpu_Rsp )  oFifo        <- mkFIFOF; // TODO: bypass fifos?
-   FIFOF#( RoundMode ) rmdFifo     <- mkFIFOF; // TODO: bypass fifos?
-   FIFOF#( Bool )     isDoubleFifo <- mkFIFOF; // TODO: bypass fifos?
-   FIFOF#( Bool )     isNegateFifo <- mkFIFOF; // TODO: bypass fifos?
+   FIFOF#( Fpu_Req )  iFifo        <- mkFIFOF1; // TODO: bypass fifos?
+   FIFOF#( Fpu_Rsp )  oFifo        <- mkFIFOF1; // TODO: bypass fifos?
+   FIFOF#( RoundMode ) rmdFifo     <- mkFIFOF1; // TODO: bypass fifos?
+   FIFOF#( Bool )     isDoubleFifo <- mkFIFOF1; // TODO: bypass fifos?
+   FIFOF#( Bool )     isNegateFifo <- mkFIFOF1; // TODO: bypass fifos?
    Reg#(FpuR)         resWire      <- mkWire;
 
    function FDouble toDouble( FloatU x, RoundMode rmode );
