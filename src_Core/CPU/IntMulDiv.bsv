@@ -34,6 +34,7 @@ module mkIntDiv #(Reg #(Bit #(w)) rg_numer,    // a.k.a. dividend, and final rem
                 (IntDiv_IFC #(w));
 
    Reg #(DivState)  rg_state     <- mkReg (Div_RDY);
+   Reg #(Bool)      rg_done      <- mkReg (False);
 
    Reg #(Bool)      rg_numer_is_signed  <- mkRegU;
    Reg #(Bool)      rg_denom_is_signed  <- mkRegU;
@@ -51,6 +52,7 @@ module mkIntDiv #(Reg #(Bit #(w)) rg_numer,    // a.k.a. dividend, and final rem
       rg_quo   <= '1;        // all bits set
       // remainder is rg_numer
       rg_state <= Div_DONE;
+      rg_done <= True;
    endrule
 
    Bit #(w) rep_most_neg = (1 << (valueOf (w) - 1));
@@ -63,6 +65,7 @@ module mkIntDiv #(Reg #(Bit #(w)) rg_numer,    // a.k.a. dividend, and final rem
       rg_quo   <= rg_numer;
       rg_numer <= 0;         // remainder
       rg_state <= Div_DONE;
+      rg_done <= False;
    endrule
 
    rule rl_start_s ((rg_state == Div_START) && (rg_denom != 0) && (! overflow));
@@ -114,6 +117,7 @@ module mkIntDiv #(Reg #(Bit #(w)) rg_numer,    // a.k.a. dividend, and final rem
    rule rl_loop2 (rg_state == Div_LOOP2);
       if (rg_numer < rg_denom) begin
 	 rg_state <= Div_DONE;
+	 rg_done <= True;
 	 let quo = rg_quo;
 	 if (rg_quoIsNeg) begin
 	    Int #(w) quo_s = unpack (quo);
@@ -142,10 +146,11 @@ module mkIntDiv #(Reg #(Bit #(w)) rg_numer,    // a.k.a. dividend, and final rem
       rg_numer_is_signed <= num_is_signed;
       rg_denom_is_signed <= den_is_signed;
       rg_state           <= Div_START;
+      rg_done            <= False;
    endmethod
 
    method Bool result_valid;
-      return (rg_state == Div_DONE);
+      return rg_done;
    endmethod
 
    method Tuple2 #(Bit #(w), Bit #(w)) result_value;
@@ -193,6 +198,7 @@ typedef enum { MUL_IDLE, MUL_BUSY, MUL_READY} MulState
 module mkIntMul (IntMul_IFC #(w));
 
    Reg #(MulState) rg_state <- mkReg (MUL_IDLE);
+   Reg #(Bool)     rg_done <- mkReg (False);
 
    Reg #(Bit #(TAdd #(w,w)))  rg_xy     <- mkRegU;
    Reg #(Bit #(TAdd #(w,w)))  rg_x      <- mkRegU;
@@ -212,6 +218,7 @@ module mkIntMul (IntMul_IFC #(w));
 	 end
 	 rg_xy    <= xy;
 	 rg_state <= MUL_READY;
+	 rg_done <= True;
       end
       else begin
 	 if (lsb (rg_y) == 1) rg_xy <= rg_xy + rg_x;
@@ -248,11 +255,12 @@ module mkIntMul (IntMul_IFC #(w));
       rg_isNeg  <= isNeg;
       rg_xy     <= 0;
       rg_state  <= MUL_BUSY;
+      rg_done   <= False;
       // $display ("DBG: IntMul: x = %h", x);
       // $display ("DBG: IntMul: y = %h", y);
    endmethod
 
-   method result_valid = (rg_state == MUL_READY);
+   method result_valid = rg_done;
 
    method result_value;
       return rg_xy;
