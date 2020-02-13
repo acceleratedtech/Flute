@@ -101,7 +101,7 @@ module mkCPU_Stage3 #(Bit #(4)         verbosity,
 			     rd_val:       RegValue { data: truncate (rg_stage3.rd_val), tag: rg_stage3.rd_tag }
 `else
 			     // WordXL        WordXL
-			     rd_val:       rg_stage3.rd_val
+			     rd_val:       RegValue { data: rg_stage3.rd_val, tag: rg_stage3.rd_tag }
 `endif
 			     };
 
@@ -150,6 +150,11 @@ module mkCPU_Stage3 #(Bit #(4)         verbosity,
       bypass.bypass_state = (rg_full && rg_stage3.rd_valid) ? BYPASS_RD_RDVAL
                                                             : BYPASS_RD_NONE;
 `endif
+
+      Bool is_ld_tag_inst = (rg_stage3.instr[6:0] == op_LOAD) && (rg_stage3.instr[14:12] == f3_LDST_TAG);
+      if (is_ld_tag_inst) begin
+         bypass.bypass_state = rg_full ? BYPASS_RD : BYPASS_RD_NONE;
+      end
 
       return Output_Stage3 {ostatus: (rg_full ? OSTATUS_PIPE : OSTATUS_EMPTY),
 			    bypass : bypass
