@@ -65,7 +65,7 @@ module mkIntDiv #(Reg #(Bit #(w)) rg_numer,    // a.k.a. dividend, and final rem
       rg_quo   <= rg_numer;
       rg_numer <= 0;         // remainder
       rg_state <= Div_DONE;
-      rg_done <= False;
+      rg_done <= True;
    endrule
 
    rule rl_start_s ((rg_state == Div_START) && (rg_denom != 0) && (! overflow));

@@ -255,6 +255,7 @@ module mkRISCV_MBox (RISCV_MBox_IFC);
       // DIV, DIVU, REM, REMU
       else begin
 	 rg_state <= STATE_DIV_REM;
+	 rg_valid <= False;
 	 intDiv.start (is_signed, is_signed);
       end
    endmethod
