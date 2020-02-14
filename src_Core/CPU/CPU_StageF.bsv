@@ -39,6 +39,8 @@ interface CPU_StageF_IFC;
    // ---- Reset
    interface Server #(Token, Token) server_reset;
 
+   method Action flush_branch_predictor;
+
    // ---- Output
    (* always_ready *)
    method Output_StageF out;
@@ -120,6 +122,10 @@ module mkCPU_StageF #(Bit #(4)  verbosity,
 
    // ---- Reset
    interface server_reset = toGPServer (f_reset_reqs, f_reset_rsps);
+
+   method Action flush_branch_predictor;
+      branch_predictor.reset;
+   endmethod
 
    // ---- Output
    method Output_StageF out;

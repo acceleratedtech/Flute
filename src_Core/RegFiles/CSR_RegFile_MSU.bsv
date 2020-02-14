@@ -689,6 +689,8 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
                      || (csr_addr ==  csr_addr_mparmask)
                      || (csr_addr ==  csr_addr_meparbase)
                      || (csr_addr ==  csr_addr_meparmask)
+
+                     || (csr_addr == csr_addr_mflush)
                      // </SANCTUM>
                      // <TAGGING>
                      || (csr_addr == csr_addr_tagctrl)
