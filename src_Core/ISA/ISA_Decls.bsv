@@ -1102,6 +1102,7 @@ CSR_Addr   csr_addr_mparbase      = 12'h7c5;     // Upper 32 bits of performance
 CSR_Addr   csr_addr_mparmask      = 12'h7c6;     // Upper 32 bits of performance-monitoring counter
 CSR_Addr   csr_addr_meparbase     = 12'h7c7;     // Upper 32 bits of performance-monitoring counter
 CSR_Addr   csr_addr_meparmask     = 12'h7c8;     // Upper 32 bits of performance-monitoring counter
+CSR_Addr   csr_addr_mflush        = 12'h7c9;     // flush pipeline and cache
 // </SANCTUM>
 
 // Information from the CSR on a new trap. 

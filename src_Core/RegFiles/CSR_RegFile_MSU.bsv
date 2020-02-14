@@ -656,10 +656,12 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 		     || (csr_addr ==  csr_addr_mmrbm)
 		     || (csr_addr ==  csr_addr_memrbm)
 
-		     || (csr_addr ==  csr_addr_mparbase)
-		     || (csr_addr ==  csr_addr_mparmask)
-		     || (csr_addr ==  csr_addr_meparbase)
-		     || (csr_addr ==  csr_addr_meparmask)
+                     || (csr_addr ==  csr_addr_mparbase)
+                     || (csr_addr ==  csr_addr_mparmask)
+                     || (csr_addr ==  csr_addr_meparbase)
+                     || (csr_addr ==  csr_addr_meparmask)
+
+                     || (csr_addr == csr_addr_mflush)
                      // </SANCTUM>
 
 	 );
