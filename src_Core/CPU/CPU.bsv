@@ -103,7 +103,10 @@ typedef enum {CPU_RESET1,
 	      CPU_FENCE,            // While waiting for FENCE to complete in Near_Mem
 	      CPU_SFENCE_VMA,       // While waiting for FENCE.VMA to complete in Near_Mem
 
-	      CPU_WFI_PAUSED        // On WFI pause
+	      CPU_WFI_PAUSED,       // On WFI pause
+
+	      CPU_PURGE_START,
+	      CPU_PURGE_FINISH
    } CPU_State
 deriving (Eq, Bits, FShow);
 
@@ -998,7 +1001,11 @@ module mkCPU (CPU_IFC);
 	 csr_regfile.csr_minstret_incr;
 
 	 // Restart the pipe
-	 rg_state <= CPU_CSRRX_RESTART;
+	 if (csr_addr == csr_addr_mflush) begin
+	    rg_state <= CPU_PURGE_START;
+	 end else begin
+	    rg_state <= CPU_CSRRX_RESTART;
+	 end
 
 `ifdef INCLUDE_TANDEM_VERIF
 	 // Trace data
@@ -1110,7 +1117,11 @@ module mkCPU (CPU_IFC);
 	 csr_regfile.csr_minstret_incr;
 
 	 // Restart the pipe
-	 rg_state <= CPU_CSRRX_RESTART;
+	 if (csr_addr == csr_addr_mflush) begin
+	    rg_state <= CPU_PURGE_START;
+	 end else begin
+	    rg_state <= CPU_CSRRX_RESTART;
+	 end
 
 `ifdef INCLUDE_TANDEM_VERIF
 	 // Trace data
@@ -1523,6 +1534,53 @@ module mkCPU (CPU_IFC);
       stageD.set_full (False);
       rg_state <= CPU_RUNNING;
    endrule : rl_trap_fetch
+
+   // ================================================================
+   // Implement the Purge instruction
+   // This resets the branch predictor to invalidate all the entries,
+   // and it uses the fence_i interface on the memory to flush the
+   // caches.
+
+   rule rl_start_PURGE (   (rg_state == CPU_PURGE_START)
+			&& (stageF.out.ostatus != OSTATUS_BUSY));
+      if (cur_verbosity > 1) $display ("%0d: %m.rl_start_PURGE", mcycle);
+
+      // Save stage1.out.next_pc since it will be destroyed by FENCE.I op
+      rg_next_pc <= stage1.out.next_pc;
+      near_mem.server_fence_i.request.put (?);
+      stageF.flush_branch_predictor;
+      rg_state <= CPU_PURGE_FINISH;
+   endrule
+
+   rule rl_finish_PURGE (rg_state == CPU_PURGE_FINISH);
+      if (cur_verbosity > 1) $display ("%0d: %m.rl_finish_PURGE", mcycle);
+
+      // Await mem system FENCE.I completion
+      let dummy <- near_mem.server_fence_i.response.get;
+
+      // MSTATUS.MXR and SSTATUS.SUM for initiating FETCH
+      Bit #(1) mstatus_MXR = mstatus [19];
+`ifdef ISA_PRIV_S
+      Bit #(1) sstatus_SUM = (csr_regfile.read_sstatus) [18];
+`else
+      Bit #(1) sstatus_SUM = 0;
+`endif
+
+      // Resume pipe
+      rg_state <= CPU_RUNNING;
+      let new_epoch <- fav_update_epoch;
+      let m_old_pc   = tagged Invalid;
+      fa_start_ifetch (new_epoch,
+		       m_old_pc,
+		       rg_next_pc,
+		       rg_cur_priv,
+		       mstatus_MXR,
+		       sstatus_SUM);
+
+      stageF.set_full (True);
+      stageD.set_full (False);
+      stage1.set_full (False);    fa_step_check;
+   endrule: rl_finish_PURGE
 
    // ================================================================
    // Stage1: nonpipe trap: BREAK into Debug Mode when dcsr.ebreakm/s/u is set
