@@ -18,6 +18,7 @@ BSC_COMPILATION_FLAGS += \
 	-D Near_Mem_Caches    \
 	-D FABRIC64    \
 	-D SIZED_POINTER_POLICY    \
+	-D INEXACT_BTB_TAG_SZ=3    \
 
 
 # Default ISA test

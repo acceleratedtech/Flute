@@ -67,7 +67,15 @@ Integer cache_index_sz  = valueOf (Cache_Index_sz);
 
 typedef Bit #(Cache_Index_sz)                           Cache_Index;
 
-typedef Bit #(TSub #(TSub #(XLEN, Cache_Index_sz), 1))  Cache_Tag;
+// This allows for approximate tagging to reduce the size of the BTB tag
+`ifdef INEXACT_BTB_TAG_SZ
+typedef `INEXACT_BTB_TAG_SZ Cache_Tag_sz;
+`else
+typedef TSub #(TSub #(XLEN, Cache_Index_sz), 1)  Cache_Tag_sz;
+`endif
+Integer cache_tag_sz = valueOf(Cache_Tag_sz);
+
+typedef Bit #(Cache_Tag_sz)  Cache_Tag;
 
 typedef Bit #(TSub #(XLEN, 1)) WordXL_Addr;
 
@@ -104,7 +112,7 @@ module mkBranch_Predictor (Branch_Predictor_IFC);
    endfunction
 
    function Cache_Tag  fn_pc_to_tag (WordXL pc);
-      return pc [(valueOf (XLEN) - 1) : cache_index_sz + 1];
+      return pc [cache_index_sz + cache_tag_sz : cache_index_sz + 1];
    endfunction
 
    function WordXL_Addr  fn_pc_to_word_addr (WordXL pc);
