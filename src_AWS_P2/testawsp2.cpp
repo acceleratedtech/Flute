@@ -12,6 +12,16 @@
 #include "AWSP2_Request.h"
 #include "AWSP2_Response.h"
 
+#define DM_CONTROL_REG 0x10
+#define DM_STATUS_REG 0x11
+#define DM_HALTSUM1_REG 0x13
+#define DM_COMMAND_REG 0x17
+
+#define DM_CONTROL_HALTREQ (1 << 31)
+#define DM_CONTROL_RESUMEREQ (1 << 30)
+
+#define DM_COMMAND_ACCESS_REGISTER 0
+
 class AWSP2 : public AWSP2_ResponseWrapper {
   sem_t sem;
   AWSP2_RequestProxy *request;
@@ -35,7 +45,7 @@ public:
     wait();
     return rsp_data;
   }
-  void dmi_read(uint32_t addr, uint32_t data) {
+  void dmi_write(uint32_t addr, uint32_t data) {
     request->dmi_write(addr, data);
   }
 
@@ -119,10 +129,42 @@ int main(int argc, const char **argv)
     // unblock memory accesses in the SoC
     fpga->memory_ready();
 
+    sleep(1);
+    fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
+    fprintf(stderr, "control %x\n", fpga->dmi_read(DM_CONTROL_REG));
+    fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
+    fprintf(stderr, "asserting haltreq\n");
+    fpga->dmi_write(DM_CONTROL_REG, DM_CONTROL_HALTREQ | fpga->dmi_read(DM_CONTROL_REG));
+    for (int i = 0; i < 100; i++) {
+	uint32_t status = fpga->dmi_read(DM_STATUS_REG);
+	if (status & (1 << 9))
+	    break;
+    }
     // test that we can read a DMI register
     for (int i =  0; i < 10; i++) {
 	fprintf(stderr, "DM register %#02x: %#08x\n", 0x10 + i, fpga->dmi_read(0x10 + i));
     }
+    fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
+    for (int i = 0; i < 32; i++) {
+	// transfer GPR i into data reg
+	fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
+	// read GPR value from data reg
+	fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
+    }
+    // read dpc
+    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x7b1);
+    fprintf(stderr, "reg pc val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
+    fpga->dmi_write(5, 0);
+    fpga->dmi_write(4, 0x8000c000);
+    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | (1 << 16) | 0x7b1);
+
+    fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
+    fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
+    fpga->dmi_write(DM_CONTROL_REG, DM_CONTROL_RESUMEREQ | fpga->dmi_read(DM_CONTROL_REG));
+    fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
+    fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
+
+    return 0;
 
     while (1) {
       // event processing is in the other thread
