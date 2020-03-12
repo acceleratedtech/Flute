@@ -8,7 +8,8 @@ MEM_WRITE_INTERFACES = lAWSP2.writeClients
 ## CONNECTALFLAGS +=  -D BYTE_ENABLES
 
 BSVFILES = AWSP2_IFC.bsv
-CPPFILES = testawsp2.cpp
+CPPFILES = loadelf.cpp testawsp2.cpp
+CONNECTALFLAGS += -lelf
 
 ARCH ?= RV64ACDFIMSU
 

@@ -11,6 +11,7 @@
 #include <portal.h>
 #include "AWSP2_Request.h"
 #include "AWSP2_Response.h"
+#include "loadelf.h"
 
 #define DM_CONTROL_REG 0x10
 #define DM_STATUS_REG 0x11
@@ -97,18 +98,18 @@ int main(int argc, const char **argv)
     // allocate a shared memory object for Rom
     size_t rom_alloc_sz = 1024*1024; 
     int romObject = portalAlloc(rom_alloc_sz, 0);
-    unsigned int *romBuffer = (unsigned int *)portalMmap(romObject, rom_alloc_sz);
+    uint8_t *romBuffer = (uint8_t *)portalMmap(romObject, rom_alloc_sz);
     fprintf(stderr, "romBuffer=%lx\n", (long)romBuffer);
 
     // allocate a shared memory object for Flash
     size_t flash_alloc_sz = 0x08000000; 
     int flashObject = portalAlloc(flash_alloc_sz, 0);
-    unsigned int *flashBuffer = (unsigned int *)portalMmap(flashObject, flash_alloc_sz);
+    uint8_t *flashBuffer = (uint8_t *)portalMmap(flashObject, flash_alloc_sz);
     fprintf(stderr, "flashBuffer=%lx\n", (long)flashBuffer);
 
     size_t dram_alloc_sz = 16*1024*1024; 
     int dramObject = portalAlloc(dram_alloc_sz, 0);
-    unsigned int *dramBuffer = (unsigned int *)portalMmap(dramObject, dram_alloc_sz);
+    uint8_t *dramBuffer = (uint8_t *)portalMmap(dramObject, dram_alloc_sz);
     fprintf(stderr, "dramBuffer=%lx\n", (long)dramBuffer);
 
     // load the ROM code into Flash
@@ -119,6 +120,7 @@ int main(int argc, const char **argv)
 
     // load the app code into DRAM
     memset(dramBuffer, 0x42, flash_alloc_sz);
+    uint64_t elf_entry = loadElf(dramBuffer, argv[1], dram_alloc_sz);
 
     // register the Flash memory object with the SoC (and program the MMU)
     fpga->register_region(7, dma->reference(romObject));
@@ -129,7 +131,6 @@ int main(int argc, const char **argv)
     // unblock memory accesses in the SoC
     fpga->memory_ready();
 
-    sleep(1);
     fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
     fprintf(stderr, "control %x\n", fpga->dmi_read(DM_CONTROL_REG));
     fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
@@ -155,7 +156,7 @@ int main(int argc, const char **argv)
     fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x7b1);
     fprintf(stderr, "reg pc val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
     fpga->dmi_write(5, 0);
-    fpga->dmi_write(4, 0x8000c000);
+    fpga->dmi_write(4, elf_entry);
     fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | (1 << 16) | 0x7b1);
 
     fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
@@ -163,8 +164,6 @@ int main(int argc, const char **argv)
     fpga->dmi_write(DM_CONTROL_REG, DM_CONTROL_RESUMEREQ | fpga->dmi_read(DM_CONTROL_REG));
     fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
     fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
-
-    return 0;
 
     while (1) {
       // event processing is in the other thread
