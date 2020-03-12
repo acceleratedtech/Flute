@@ -102,7 +102,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       p2_core.master0.m_arready(w_arready0);
       p2_core.master0.m_awready(w_awready0);
    endrule
-   rule debug0;
+   rule debug0 if (False);
       if (p2_core.master0.m_arvalid()
       	 || w_arready0
 	 || w_rvalid0
@@ -129,7 +129,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    rule master0_rdata if (ready);
       let rdata = readDataFifo0.first;
-      $display("master0 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+      //$display("master0 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
 
       w_rvalid0 <= readDataFifo0.notEmpty();
       p2_core.master0.m_rvalid(readDataFifo0.notEmpty(),
@@ -142,6 +142,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    // this is in a second rule to avoid combinational loop on rvalid
    rule master0_rdata_deq if (w_rvalid0 && p2_core.master0.m_rready());
+      //$display("master0_rdata_deq rvalid %d rready %d", w_rvalid0, p2_core.master0.m_rready());
       readDataFifo0.deq();
    endrule
 
@@ -161,7 +162,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    endrule
    rule master1_w if (p2_core.master1.m_wvalid());
       let wdata = p2_core.master1.m_wdata;
-      $display("master1 wdata %h", wdata);
+      //$display("master1 wdata %h", wdata);
       p2_core.master1.m_wready(p2_core.master1.m_wvalid());
    endrule
    //rule master1_b;
@@ -172,7 +173,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       p2_core.master1.m_arready(w_arready1);
       p2_core.master1.m_awready(w_awready1);
    endrule
-   rule debug1;
+   rule debug1 if (False);
       if (p2_core.master1.m_arvalid()
       	 || w_arready1
 	 || w_rvalid1
@@ -199,7 +200,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    rule master1_rdata if (ready);
       let rdata = readDataFifo1.first;
-      $display("master1 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+      //$display("master1 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
 
       w_rvalid1 <= readDataFifo1.notEmpty();
       p2_core.master1.m_rvalid(readDataFifo1.notEmpty(),
@@ -215,16 +216,17 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       readDataFifo1.deq();
    endrule
 
+`ifdef INCLUDE_GDB_CONTROL
    rule dmi_rsp;
       let rdata <- p2_core.dmi.read_data();
       response.dmi_read_data(rdata);
    endrule
+`endif
 
    MemReadClient#(DataBusWidth) readClient0 = (interface MemReadClient;
       interface Get readReq = toGet(readReqFifo0);
       interface Put readData;
         method Action put(MemData#(DataBusWidth) rdata);
-	  $display("readClient.readData data=%h tag=%d", rdata.data, rdata.tag);
 	  readDataFifo0.enq(rdata);
 	endmethod
       endinterface
@@ -239,7 +241,6 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       interface Get readReq = toGet(readReqFifo1);
       interface Put readData;
         method Action put(MemData#(DataBusWidth) rdata);
-	  $display("readClient1.readData data=%h tag=%d", rdata.data, rdata.tag);
 	  readDataFifo1.enq(rdata);
 	endmethod
       endinterface
@@ -252,10 +253,16 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    interface AWSP2_Request request;
       method Action dmi_read(Bit#(7) addr);
+`ifdef INCLUDE_GDB_CONTROL
          p2_core.dmi.read_addr(addr);
+`else
+	response.dmi_read_data('hbeef);
+`endif
       endmethod
       method Action dmi_write(Bit#(7) addr, Bit#(32) data);
+`ifdef INCLUDE_GDB_CONTROL
          p2_core.dmi.write(addr, data);
+`endif
       endmethod
       method Action register_region(Bit#(32) region, Bit#(32) objectId);
          objIds[region] <= truncate(objectId);
