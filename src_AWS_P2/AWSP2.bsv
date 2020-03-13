@@ -80,7 +80,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let len    = p2_core.master0.m_awlen();
       let size   = p2_core.master0.m_awsize();
       let awid   = p2_core.master0.m_awid();
-      $display("master0 awaddr %h len=%d size=%d", awaddr, len, size);
+      $display("master0 awaddr %h len=%d size=%d awid=%d", awaddr, len, size, awid);
       w_awready0 <= writeReqFifo0.notFull();
 
       Bit#(4)  objNumber = truncate(awaddr >> 28);
@@ -153,7 +153,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let len    = p2_core.master1.m_awlen();
       let size   = p2_core.master1.m_awsize();
       let awid   = p2_core.master1.m_awid();
-      $display("master1 awaddr %h len=%d size=%d", awaddr, len, size);
+      $display("master1 awaddr %h len=%d size=%d awid=%d", awaddr, len, size, awid);
       w_awready1 <= writeReqFifo1.notFull();
 
       Bit#(4)  objNumber = truncate(awaddr >> 28);
@@ -165,8 +165,9 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    endrule
    rule master1_w if (p2_core.master1.m_wvalid());
       let wdata = p2_core.master1.m_wdata;
+      let wstrb = p2_core.master1.m_wstrb;
       let wlast = p2_core.master1.m_wlast;
-      //$display("master1 wdata %h wstrb %h", wdata, wstrb);
+      $display("master1 wdata %h wstrb %h", wdata, wstrb);
       writeDataFifo1.enq(MemData { data: wdata, tag: 0, last: wlast});
     endrule
     rule master1_wready;
@@ -215,7 +216,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    rule master1_rdata if (ready);
       let rdata = readDataFifo1.first;
-      //$display("master1 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+      $display("master1 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
 
       w_rvalid1 <= readDataFifo1.notEmpty();
       p2_core.master1.m_rvalid(readDataFifo1.notEmpty(),

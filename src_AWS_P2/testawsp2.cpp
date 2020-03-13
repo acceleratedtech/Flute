@@ -1,6 +1,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <semaphore.h>
 #include <sys/types.h>
@@ -120,8 +121,51 @@ int copyFile(char *buffer, const char *filename, size_t buffer_size)
     return bytes_copied;
 }
 
-int main(int argc, const char **argv)
+const struct option long_options[] = {
+    { "bootrom", required_argument, 0, 'b' },
+    { "elf",     required_argument, 0, 'e' },
+    { "flash",   required_argument, 0, 'f' },
+    { 0,         0,                 0, 0 }
+};
+
+void usage(const char *name)
 {
+    fprintf(stderr, "Usage: %s [-b bootrombin] [--bootrom bootrombin] [--flash flashbin] [--elf elf] [ -e elf] [elf]\n", name);
+}
+
+int main(int argc, char * const *argv)
+{
+    const char *bootrom_filename = 0;
+    const char *elf_filename = 0;
+    const char *flash_filename = 0;
+    while (1) {
+	int option_index = optind ? optind : 1;
+	char c = getopt_long(argc, argv, "b:e:",
+			     long_options, &option_index);
+        if (c == -1)
+            break;
+
+	switch (c) {
+        case 'b':
+	    bootrom_filename = optarg;
+	    break;
+        case 'e':
+	    elf_filename = optarg;
+	    break;
+        case 'f':
+	    flash_filename = optarg;
+	    break;
+	}
+    }
+
+    if (optind < argc) {
+	elf_filename = argv[optind];
+    }
+    if (!bootrom_filename && !elf_filename) {
+	usage(argv[0]);
+	return -1;
+    }
+
     //AWSP2_RequestProxy *request = new AWSP2_RequestProxy(IfcNames_AWSP2_RequestS2H);
     AWSP2 *fpga = new AWSP2(IfcNames_AWSP2_ResponseH2S);
     DmaManager *dma = platformInit();
@@ -144,14 +188,17 @@ int main(int argc, const char **argv)
     fprintf(stderr, "dramBuffer=%lx\n", (long)dramBuffer);
 
     // load the ROM code into Flash
-    copyFile((char *)romBuffer, "../../../../bootrom/bootrom.img", rom_alloc_sz);
+
+    if (bootrom_filename)
+	copyFile((char *)romBuffer, bootrom_filename, rom_alloc_sz);
 
     // where is this coming from?
-    copyFile((char *)flashBuffer, "../../../../bootrom/bootrom.img", flash_alloc_sz);
+    if (flash_filename)
+	copyFile((char *)flashBuffer, flash_filename, flash_alloc_sz);
 
     // load the app code into DRAM
     memset(dramBuffer, 0x42, flash_alloc_sz);
-    uint64_t elf_entry = loadElf(dramBuffer, argv[1], dram_alloc_sz);
+    uint64_t elf_entry = loadElf(dramBuffer, elf_filename, dram_alloc_sz);
     fprintf(stderr, "elf_entry=%08lx\n", elf_entry);
 
     // register the Flash memory object with the SoC (and program the MMU)
@@ -169,20 +216,20 @@ int main(int argc, const char **argv)
     fprintf(stderr, "asserting haltreq\n");
     fpga->dmi_write(DM_CONTROL_REG, DM_CONTROL_HALTREQ | fpga->dmi_read(DM_CONTROL_REG));
     for (int i = 0; i < 100; i++) {
-	uint32_t status = fpga->dmi_read(DM_STATUS_REG);
-	if (status & (1 << 9))
-	    break;
+        uint32_t status = fpga->dmi_read(DM_STATUS_REG);
+        if (status & (1 << 9))
+            break;
     }
     // test that we can read a DMI register
     for (int i =  0; i < 10; i++) {
-	fprintf(stderr, "DM register %#02x: %#08x\n", 0x10 + i, fpga->dmi_read(0x10 + i));
+        fprintf(stderr, "DM register %#02x: %#08x\n", 0x10 + i, fpga->dmi_read(0x10 + i));
     }
     fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
     for (int i = 0; i < 32; i++) {
-	// transfer GPR i into data reg
-	fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
-	// read GPR value from data reg
-	fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
+        // transfer GPR i into data reg
+        fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
+        // read GPR value from data reg
+        fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
     }
     // read dpc
     fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x7b1);
@@ -199,31 +246,33 @@ int main(int argc, const char **argv)
     fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
 
     while (1) {
-	// event processing is in the other thread
-	fpga->halt();
-	fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x7b1);
-	uint32_t dpc_upper = fpga->dmi_read(5);
-	uint32_t dpc_lower = fpga->dmi_read(4);
-	fprintf(stderr, "exception pc val %#08x.%#08x\n", dpc_upper, dpc_lower);
-	if (dpc_upper == 0 && dpc_lower == 0x1000) {
-	    for (int i = 0; i < 32; i++) {
-		// transfer GPR i into data reg
-		fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
-		// read GPR value from data reg
-		fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
-	    }
+        if (1) {
+            // event processing is in the other thread
+            fpga->halt();
+            fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x7b1);
+            uint32_t dpc_upper = fpga->dmi_read(5);
+            uint32_t dpc_lower = fpga->dmi_read(4);
+            fprintf(stderr, "exception pc val %#08x.%#08x\n", dpc_upper, dpc_lower);
+            if (dpc_upper == 0 && dpc_lower == 0x1000) {
+                for (int i = 0; i < 32; i++) {
+                    // transfer GPR i into data reg
+                    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
+                    // read GPR value from data reg
+                    fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
+                }
 
-	    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x341);
-	    fprintf(stderr, "mepc   val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
-	    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x342);
-	    fprintf(stderr, "mcause val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
-	    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x343);
-	    fprintf(stderr, "mtval  val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
+                fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x341);
+                fprintf(stderr, "mepc   val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
+                fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x342);
+                fprintf(stderr, "mcause val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
+                fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x343);
+                fprintf(stderr, "mtval  val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
 
-	    break;	  
-	}
-	fpga->resume();
-	sleep(1);
+                break;    
+            }
+            fpga->resume();
+        }
+	sleep(5);
     }
     return 0;
 }
