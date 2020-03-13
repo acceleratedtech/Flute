@@ -275,16 +275,16 @@ int main(int argc, char * const *argv)
         // event processing is in the other thread
         fpga->halt();
 
-        fprintf(stderr, "exception pc val %#08lx\n", fpga->read_csr(0x7b1));
-        if (dpc_upper == 0 && dpc_lower == 0x1000) {
+	uint64_t dpc = fpga->read_csr(0x7b1);
+        fprintf(stderr, "exception pc val %08lx\n", dpc);
+        if (dpc == 0x1000) {
             for (int i = 0; i < 32; i++) {
-                fprintf(stderr, "reg %d val %#08lx\n", i, fpga->read_gpr(i));
+                fprintf(stderr, "reg %d val %08lx\n", i, fpga->read_gpr(i));
             }
 
-            fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x341);
-            fprintf(stderr, "mepc   %#08lx\n", fpga->read_csr(0x341));
-            fprintf(stderr, "mcause %#08lx\n", fpga->read_csr(0x342));
-            fprintf(stderr, "mepc   %#08lx\n", fpga->read_csr(0x343));
+            fprintf(stderr, "mepc   %08lx\n", fpga->read_csr(0x341));
+            fprintf(stderr, "mcause %08lx\n", fpga->read_csr(0x342));
+            fprintf(stderr, "mepc   %08lx\n", fpga->read_csr(0x343));
 
             break;    
         }
