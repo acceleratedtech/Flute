@@ -88,7 +88,7 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
 	    data = elf_getdata (scn, data);
 
 	    // n_initialized += data->d_size;
-	    size_t max_addr = (shdr.sh_addr + data->d_size - 1) & ~0xC000000ul;    // shdr.sh_size + 4;
+	    size_t max_addr = (shdr.sh_addr + data->d_size - 1) & ~0xC0000000ul;    // shdr.sh_size + 4;
 
 	    if (max_addr >= max_mem_size) {
 		fprintf(stdout, "INTERNAL ERROR: max_addr (0x%0lx) > buffer size (0x%0lx)\n",
