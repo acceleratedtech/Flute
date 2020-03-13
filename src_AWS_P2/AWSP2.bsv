@@ -59,7 +59,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    FIFOF#(MemRequest) writeReqFifo0 <- mkFIFOF();
    FIFOF#(MemData#(DataBusWidth))   readDataFifo0 <- mkSizedBRAMFIFOF(64);
    FIFOF#(MemData#(DataBusWidth))   writeDataFifo0 <- mkSizedBRAMFIFOF(64);
-   FIFO#(Bit#(MemTagSize)) doneFifo0 <- mkFIFO();
+   FIFOF#(Bit#(MemTagSize)) doneFifo0 <- mkFIFOF();
 
    Wire#(Bool) w_arready0 <- mkDWire(False);
    Wire#(Bool) w_awready0 <- mkDWire(False);
@@ -69,7 +69,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    FIFOF#(MemRequest) writeReqFifo1 <- mkFIFOF();
    FIFOF#(MemData#(DataBusWidth))   readDataFifo1 <- mkSizedBRAMFIFOF(64);
    FIFOF#(MemData#(DataBusWidth))   writeDataFifo1 <- mkSizedBRAMFIFOF(64);
-   FIFO#(Bit#(MemTagSize)) doneFifo1 <- mkFIFO();
+   FIFOF#(Bit#(MemTagSize)) doneFifo1 <- mkFIFOF();
 
    Wire#(Bool) w_arready1 <- mkDWire(False);
    Wire#(Bool) w_awready1 <- mkDWire(False);
@@ -86,7 +86,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       Bit#(4)  objNumber = truncate(awaddr >> 28);
       Bit#(24) objOffset = truncate(awaddr);
       let objId = objIds[objNumber];
-      writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: 64, tag: extend(awid) });
+      let burstLen = 8 * (len + 1);
+      writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
 
    endrule
    rule master0_wdata if (p2_core.master0.m_wvalid());
@@ -123,7 +124,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       Bit#(24) objOffset = truncate(araddr);
 
       let objId = objIds[objNumber];
-      readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: 64, tag: extend(arid) });
+      let burstLen = 8 * (len + 1);
+      readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
 
    endrule
 
@@ -157,17 +159,29 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       Bit#(4)  objNumber = truncate(awaddr >> 28);
       Bit#(24) objOffset = truncate(awaddr);
       let objId = objIds[objNumber];
-      writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: 64, tag: extend(awid) });
+      let burstLen = 8 * (len + 1);
+      writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
 
    endrule
    rule master1_w if (p2_core.master1.m_wvalid());
       let wdata = p2_core.master1.m_wdata;
-      //$display("master1 wdata %h", wdata);
-      p2_core.master1.m_wready(p2_core.master1.m_wvalid());
+      let wlast = p2_core.master1.m_wlast;
+      //$display("master1 wdata %h wstrb %h", wdata, wstrb);
+      writeDataFifo1.enq(MemData { data: wdata, tag: 0, last: wlast});
+    endrule
+    rule master1_wready;
+      p2_core.master1.m_wready(writeDataFifo1.notFull());
    endrule
-   //rule master1_b;
-   //   p2_core.master1.m_bvalid();
-   //endrule
+   rule master1_b;
+      let bvalid = doneFifo1.notEmpty();
+      let bid    = doneFifo1.first();
+      let bresp = 0;
+      let buser = 0;
+      p2_core.master1.m_bvalid(bvalid, truncate(bid), bresp, buser);
+      if (p2_core.master1.m_bready()) begin
+          doneFifo1.deq();
+      end
+   endrule
 
    rule master1_a_ready;
       p2_core.master1.m_arready(w_arready1);
@@ -194,7 +208,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       Bit#(24) objOffset = truncate(araddr);
 
       let objId = objIds[objNumber];
-      readReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: 64, tag: extend(arid) });
+      let burstLen = 8 * (len + 1);
+      readReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
 
    endrule
 
