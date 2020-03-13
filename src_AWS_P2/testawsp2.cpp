@@ -123,6 +123,7 @@ int copyFile(char *buffer, const char *filename, size_t buffer_size)
 
 const struct option long_options[] = {
     { "bootrom", required_argument, 0, 'b' },
+    { "cpuverbosity",   required_argument, 0, 'v' },
     { "elf",     required_argument, 0, 'e' },
     { "flash",   required_argument, 0, 'f' },
     { 0,         0,                 0, 0 }
@@ -130,7 +131,7 @@ const struct option long_options[] = {
 
 void usage(const char *name)
 {
-    fprintf(stderr, "Usage: %s [-b bootrombin] [--bootrom bootrombin] [--flash flashbin] [--elf elf] [ -e elf] [elf]\n", name);
+    fprintf(stderr, "Usage: %s [-b bootrombin] [--bootrom bootrombin] [--flash flashbin] [--elf elf] [ -e elf] [elf] [--cpuverbosity n]\n", name);
 }
 
 int main(int argc, char * const *argv)
@@ -138,6 +139,7 @@ int main(int argc, char * const *argv)
     const char *bootrom_filename = 0;
     const char *elf_filename = 0;
     const char *flash_filename = 0;
+    int cpuverbosity = 1;
     while (1) {
 	int option_index = optind ? optind : 1;
 	char c = getopt_long(argc, argv, "b:e:",
@@ -154,6 +156,9 @@ int main(int argc, char * const *argv)
 	    break;
         case 'f':
 	    flash_filename = optarg;
+	    break;
+        case 'v':
+	    cpuverbosity = strtoul(optarg, 0, 0);
 	    break;
 	}
     }
@@ -195,6 +200,9 @@ int main(int argc, char * const *argv)
     // where is this coming from?
     if (flash_filename)
 	copyFile((char *)flashBuffer, flash_filename, flash_alloc_sz);
+
+    if (cpuverbosity != 1)
+	fpga->dmi_write(0x60, cpuverbosity);
 
     // load the app code into DRAM
     memset(dramBuffer, 0x42, flash_alloc_sz);
