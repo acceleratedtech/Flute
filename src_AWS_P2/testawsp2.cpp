@@ -125,6 +125,7 @@ const struct option long_options[] = {
     { "bootrom", required_argument, 0, 'b' },
     { "cpuverbosity",   required_argument, 0, 'v' },
     { "elf",     required_argument, 0, 'e' },
+    { "entry",   required_argument, 0, 'E' },
     { "flash",   required_argument, 0, 'f' },
     { 0,         0,                 0, 0 }
 };
@@ -140,6 +141,7 @@ int main(int argc, char * const *argv)
     const char *elf_filename = 0;
     const char *flash_filename = 0;
     int cpuverbosity = 1;
+    uint32_t entry = 0;
     while (1) {
 	int option_index = optind ? optind : 1;
 	char c = getopt_long(argc, argv, "b:e:",
@@ -153,6 +155,9 @@ int main(int argc, char * const *argv)
 	    break;
         case 'e':
 	    elf_filename = optarg;
+	    break;
+        case 'E':
+	    entry = strtoul(optarg, 0, 0);
 	    break;
         case 'f':
 	    flash_filename = optarg;
@@ -239,11 +244,11 @@ int main(int argc, char * const *argv)
         // read GPR value from data reg
         fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
     }
-    // read dpc
-    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x7b1);
-    fprintf(stderr, "reg pc val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
+    if (!entry)
+	entry = elf_entry;
+    fprintf(stderr, "setting pc val %#08x.%#08x\n", 0, entry);
     fpga->dmi_write(5, 0);
-    fpga->dmi_write(4, 0x80003000);
+    fpga->dmi_write(4, entry);
     // update the dpc
     fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | (1 << 16) | 0x7b1);
 
