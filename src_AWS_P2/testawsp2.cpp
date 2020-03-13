@@ -219,8 +219,7 @@ int main(int argc, char * const *argv)
     if (flash_filename)
         copyFile((char *)flashBuffer, flash_filename, flash_alloc_sz);
 
-    if (cpuverbosity != 1)
-        fpga->dmi_write(0x60, cpuverbosity);
+    fpga->dmi_write(0x60, cpuverbosity);
 
     // load the app code into DRAM
     memset(dramBuffer, 0x42, flash_alloc_sz);
