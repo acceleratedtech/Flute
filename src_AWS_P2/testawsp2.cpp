@@ -39,24 +39,36 @@ public:
 	this->rsp_data = rsp_data;
 	sem_post(&sem);
     }
-  void wait() {
-    sem_wait(&sem);
-  }
-  uint32_t dmi_read(uint32_t addr) {
-    request->dmi_read(addr);
-    wait();
-    return rsp_data;
-  }
-  void dmi_write(uint32_t addr, uint32_t data) {
-    request->dmi_write(addr, data);
-  }
 
-  void register_region(uint32_t region, uint32_t objid) {
-    request->register_region(region, objid);
-  }
-  void memory_ready() {
-    request->memory_ready();
-  }
+    void wait() {
+	sem_wait(&sem);
+    }
+
+    uint32_t dmi_read(uint32_t addr) {
+	request->dmi_read(addr);
+	wait();
+	return rsp_data;
+    }
+
+    void dmi_write(uint32_t addr, uint32_t data) {
+	request->dmi_write(addr, data);
+    }
+
+    void register_region(uint32_t region, uint32_t objid) {
+	request->register_region(region, objid);
+    }
+
+    void memory_ready() {
+	request->memory_ready();
+    }
+
+    uint64_t read_csr(int i) {
+	dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | i);
+	uint64_t val = dmi_read(5);
+	val <<=  32;
+	val |= dmi_read(4);
+	return val;
+    }
 
     uint64_t read_gpr(int i) {
 	dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
@@ -65,6 +77,7 @@ public:
 	val |= dmi_read(4);
 	return val;
     }
+
     void write_gpr(int i, uint64_t val) {
 	dmi_write(5, (val >> 32) & 0xFFFFFFFF);
 	dmi_write(4, (val >>  0) & 0xFFFFFFFF);
@@ -143,37 +156,37 @@ int main(int argc, char * const *argv)
     int cpuverbosity = 1;
     uint32_t entry = 0;
     while (1) {
-	int option_index = optind ? optind : 1;
-	char c = getopt_long(argc, argv, "b:e:",
-			     long_options, &option_index);
+        int option_index = optind ? optind : 1;
+        char c = getopt_long(argc, argv, "b:e:",
+                             long_options, &option_index);
         if (c == -1)
             break;
 
-	switch (c) {
+        switch (c) {
         case 'b':
-	    bootrom_filename = optarg;
-	    break;
+            bootrom_filename = optarg;
+            break;
         case 'e':
-	    elf_filename = optarg;
-	    break;
+            elf_filename = optarg;
+            break;
         case 'E':
-	    entry = strtoul(optarg, 0, 0);
-	    break;
+            entry = strtoul(optarg, 0, 0);
+            break;
         case 'f':
-	    flash_filename = optarg;
-	    break;
+            flash_filename = optarg;
+            break;
         case 'v':
-	    cpuverbosity = strtoul(optarg, 0, 0);
-	    break;
-	}
+            cpuverbosity = strtoul(optarg, 0, 0);
+            break;
+        }
     }
 
     if (optind < argc) {
-	elf_filename = argv[optind];
+        elf_filename = argv[optind];
     }
     if (!bootrom_filename && !elf_filename) {
-	usage(argv[0]);
-	return -1;
+        usage(argv[0]);
+        return -1;
     }
 
     //AWSP2_RequestProxy *request = new AWSP2_RequestProxy(IfcNames_AWSP2_RequestS2H);
@@ -200,14 +213,14 @@ int main(int argc, char * const *argv)
     // load the ROM code into Flash
 
     if (bootrom_filename)
-	copyFile((char *)romBuffer, bootrom_filename, rom_alloc_sz);
+        copyFile((char *)romBuffer, bootrom_filename, rom_alloc_sz);
 
     // where is this coming from?
     if (flash_filename)
-	copyFile((char *)flashBuffer, flash_filename, flash_alloc_sz);
+        copyFile((char *)flashBuffer, flash_filename, flash_alloc_sz);
 
     if (cpuverbosity != 1)
-	fpga->dmi_write(0x60, cpuverbosity);
+        fpga->dmi_write(0x60, cpuverbosity);
 
     // load the app code into DRAM
     memset(dramBuffer, 0x42, flash_alloc_sz);
@@ -245,7 +258,7 @@ int main(int argc, char * const *argv)
         fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
     }
     if (!entry)
-	entry = elf_entry;
+        entry = elf_entry;
     fprintf(stderr, "setting pc val %#08x.%#08x\n", 0, entry);
     fpga->dmi_write(5, 0);
     fpga->dmi_write(4, entry);
@@ -259,33 +272,25 @@ int main(int argc, char * const *argv)
     fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
 
     while (1) {
-        if (1) {
-            // event processing is in the other thread
-            fpga->halt();
-            fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x7b1);
-            uint32_t dpc_upper = fpga->dmi_read(5);
-            uint32_t dpc_lower = fpga->dmi_read(4);
-            fprintf(stderr, "exception pc val %#08x.%#08x\n", dpc_upper, dpc_lower);
-            if (dpc_upper == 0 && dpc_lower == 0x1000) {
-                for (int i = 0; i < 32; i++) {
-                    // transfer GPR i into data reg
-                    fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
-                    // read GPR value from data reg
-                    fprintf(stderr, "reg %d val %#08x.%#08x\n", i, fpga->dmi_read(5), fpga->dmi_read(4));
-                }
+        // event processing is in the other thread
+        fpga->halt();
 
-                fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x341);
-                fprintf(stderr, "mepc   val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
-                fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x342);
-                fprintf(stderr, "mcause val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
-                fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x343);
-                fprintf(stderr, "mtval  val %#08x.%#08x\n", fpga->dmi_read(5), fpga->dmi_read(4));
-
-                break;    
+        fprintf(stderr, "exception pc val %#08lx\n", fpga->read_csr(0x7b1));
+        if (dpc_upper == 0 && dpc_lower == 0x1000) {
+            for (int i = 0; i < 32; i++) {
+                fprintf(stderr, "reg %d val %#08lx\n", i, fpga->read_gpr(i));
             }
-            fpga->resume();
+
+            fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x341);
+            fprintf(stderr, "mepc   %#08lx\n", fpga->read_csr(0x341));
+            fprintf(stderr, "mcause %#08lx\n", fpga->read_csr(0x342));
+            fprintf(stderr, "mepc   %#08lx\n", fpga->read_csr(0x343));
+
+            break;    
         }
-	sleep(5);
+        fpga->resume();
+
+        sleep(1);
     }
     return 0;
 }
