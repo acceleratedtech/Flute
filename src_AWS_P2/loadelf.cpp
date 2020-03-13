@@ -73,8 +73,10 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
 	char *sec_name = elf_strptr(e, shstrndx, shdr.sh_name);
 	fprintf(stdout, "Section %-16s: ", sec_name);
 
+	if (strcmp(sec_name, ".tohost") == 0) {
+	}
 	// If we find a code/data section, load it into the model
-	if (   ((shdr.sh_type == SHT_PROGBITS)
+	else if (   ((shdr.sh_type == SHT_PROGBITS)
 		|| (shdr.sh_type == SHT_NOBITS)
 		|| (shdr.sh_type == SHT_INIT_ARRAY)
 		|| (shdr.sh_type == SHT_FINI_ARRAY))
@@ -86,7 +88,7 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
 	    data = elf_getdata (scn, data);
 
 	    // n_initialized += data->d_size;
-	    size_t max_addr = shdr.sh_addr + data->d_size - 1 - 0x80000000ul;    // shdr.sh_size + 4;
+	    size_t max_addr = (shdr.sh_addr + data->d_size - 1) & ~0xC000000ul;    // shdr.sh_size + 4;
 
 	    if (max_addr >= max_mem_size) {
 		fprintf(stdout, "INTERNAL ERROR: max_addr (0x%0lx) > buffer size (0x%0lx)\n",
@@ -97,7 +99,7 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
 	    }
 
 	    if (shdr.sh_type != SHT_NOBITS) {
-		memcpy (& (dram_buffer [shdr.sh_addr - 0x80000000ul]), data->d_buf, data->d_size);
+		memcpy (& (dram_buffer [shdr.sh_addr & ~0xC0000000ul]), data->d_buf, data->d_size);
 	    }
 	    fprintf (stdout, "addr %16lx to addr %16lx; size 0x%8lx (= %0ld) bytes\n",
 		     shdr.sh_addr, shdr.sh_addr + data->d_size, data->d_size, data->d_size);
