@@ -161,7 +161,6 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let objId = objIds[objNumber];
       let burstLen = 8 * (len + 1);
       writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
-
    endrule
    rule master1_w if (p2_core.master1.m_wvalid());
       let wdata = p2_core.master1.m_wdata;
@@ -222,7 +221,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       p2_core.master1.m_rvalid(readDataFifo1.notEmpty(),
 			       truncate(rdata.tag),
 			       rdata.data,
-			       1,  // rresp
+			       0,  // rresp
 			       rdata.last,
 			       ?); // ruser
    endrule
