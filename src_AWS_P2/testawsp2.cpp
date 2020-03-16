@@ -25,82 +25,95 @@
 #define DM_COMMAND_ACCESS_REGISTER 0
 
 class AWSP2 : public AWSP2_ResponseWrapper {
-  sem_t sem;
-  AWSP2_RequestProxy *request;
-  uint32_t rsp_data;
+    sem_t sem;
+    AWSP2_RequestProxy *request;
+    uint32_t rsp_data;
 public:
     AWSP2(int id)
-    : AWSP2_ResponseWrapper(id) {
-	sem_init(&sem, 0, 0);
-      request = new AWSP2_RequestProxy(IfcNames_AWSP2_RequestS2H);
+        : AWSP2_ResponseWrapper(id) {
+        sem_init(&sem, 0, 0);
+        request = new AWSP2_RequestProxy(IfcNames_AWSP2_RequestS2H);
     }
     virtual void dmi_read_data(uint32_t rsp_data) {
-	//fprintf(stderr, "dmi_read_data data=%08x\n", rsp_data);
-	this->rsp_data = rsp_data;
-	sem_post(&sem);
+        //fprintf(stderr, "dmi_read_data data=%08x\n", rsp_data);
+        this->rsp_data = rsp_data;
+        sem_post(&sem);
     }
 
     void wait() {
-	sem_wait(&sem);
+        sem_wait(&sem);
     }
 
     uint32_t dmi_read(uint32_t addr) {
-	request->dmi_read(addr);
-	wait();
-	return rsp_data;
+        request->dmi_read(addr);
+        wait();
+        return rsp_data;
     }
 
     void dmi_write(uint32_t addr, uint32_t data) {
-	request->dmi_write(addr, data);
+        request->dmi_write(addr, data);
     }
 
     void register_region(uint32_t region, uint32_t objid) {
-	request->register_region(region, objid);
+        request->register_region(region, objid);
     }
 
     void memory_ready() {
-	request->memory_ready();
+        request->memory_ready();
     }
 
     uint64_t read_csr(int i) {
-	dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | i);
-	uint64_t val = dmi_read(5);
-	val <<=  32;
-	val |= dmi_read(4);
-	return val;
+        dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | i);
+        uint64_t val = dmi_read(5);
+        val <<=  32;
+        val |= dmi_read(4);
+        return val;
     }
 
     uint64_t read_gpr(int i) {
-	dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
-	uint64_t val = dmi_read(5);
-	val <<=  32;
-	val |= dmi_read(4);
-	return val;
+        dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
+        uint64_t val = dmi_read(5);
+        val <<=  32;
+        val |= dmi_read(4);
+        return val;
     }
 
     void write_gpr(int i, uint64_t val) {
-	dmi_write(5, (val >> 32) & 0xFFFFFFFF);
-	dmi_write(4, (val >>  0) & 0xFFFFFFFF);
-	dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | (1 << 16) | 0x1000 | i);
+        dmi_write(5, (val >> 32) & 0xFFFFFFFF);
+        dmi_write(4, (val >>  0) & 0xFFFFFFFF);
+        dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | (1 << 16) | 0x1000 | i);
     }
 
     void halt(int timeout = 100) {
-	dmi_write(DM_CONTROL_REG, DM_CONTROL_HALTREQ | dmi_read(DM_CONTROL_REG));
-	for (int i = 0; i < 100; i++) {
-	    uint32_t status = dmi_read(DM_STATUS_REG);
-	    if (status & (1 << 9))
-		break;
-	}
-	dmi_write(DM_CONTROL_REG, ~DM_CONTROL_HALTREQ & dmi_read(DM_CONTROL_REG));
+        dmi_write(DM_CONTROL_REG, DM_CONTROL_HALTREQ | dmi_read(DM_CONTROL_REG));
+        for (int i = 0; i < 100; i++) {
+            uint32_t status = dmi_read(DM_STATUS_REG);
+            if (status & (1 << 9))
+                break;
+        }
+        dmi_write(DM_CONTROL_REG, ~DM_CONTROL_HALTREQ & dmi_read(DM_CONTROL_REG));
     }
     void resume(int timeout = 100) {
-	dmi_write(DM_CONTROL_REG, DM_CONTROL_RESUMEREQ | dmi_read(DM_CONTROL_REG));
-	for (int i = 0; i < 100; i++) {
-	    uint32_t status = dmi_read(DM_STATUS_REG);
-	    if (status & (1 << 17))
-		break;
-	}
-	dmi_write(DM_CONTROL_REG, ~DM_CONTROL_RESUMEREQ & dmi_read(DM_CONTROL_REG));
+        dmi_write(DM_CONTROL_REG, DM_CONTROL_RESUMEREQ | dmi_read(DM_CONTROL_REG));
+        for (int i = 0; i < 100; i++) {
+            uint32_t status = dmi_read(DM_STATUS_REG);
+            if (status & (1 << 17))
+                break;
+        }
+        dmi_write(DM_CONTROL_REG, ~DM_CONTROL_RESUMEREQ & dmi_read(DM_CONTROL_REG));
+    }
+
+    void io_awaddr(uint32_t awaddr, uint8_t awlen, uint8_t awsize, uint8_t awid) {
+    }
+
+    void io_araddr(uint32_t araddr, uint8_t arlen, uint8_t arsize, uint8_t arid) {
+    }
+
+    void io_wdata(uint64_t wdata, uint8_t wstrb) {
+    }
+
+    void set_fabric_verbosity(uint8_t verbosity) {
+        request->set_fabric_verbosity(verbosity);
     }
 };
 
