@@ -275,7 +275,7 @@ int main(int argc, char * const *argv)
         fpga->halt();
 
 	uint64_t dpc = fpga->read_csr(0x7b1);
-        fprintf(stderr, "exception pc val %08lx\n", dpc);
+        fprintf(stderr, "pc val %08lx\n", dpc);
         if (dpc == 0x1000) {
             for (int i = 0; i < 32; i++) {
                 fprintf(stderr, "reg %d val %08lx\n", i, fpga->read_gpr(i));
