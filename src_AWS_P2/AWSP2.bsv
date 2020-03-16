@@ -80,13 +80,13 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let len    = p2_core.master0.m_awlen();
       let size   = p2_core.master0.m_awsize();
       let awid   = p2_core.master0.m_awid();
-      $display("master0 awaddr %h len=%d size=%d awid=%d", awaddr, len, size, awid);
       w_awready0 <= writeReqFifo0.notFull();
 
       Bit#(4)  objNumber = truncate(awaddr >> 28);
-      Bit#(24) objOffset = truncate(awaddr);
+      Bit#(28) objOffset = truncate(awaddr);
       let objId = objIds[objNumber];
       let burstLen = 8 * (len + 1);
+      $display("master0 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h", awaddr, len, size, awid, objId, objOffset);
       writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
 
    endrule
@@ -116,22 +116,22 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let len    = p2_core.master0.m_arlen();
       let size   = p2_core.master0.m_arsize();
       let arid   = p2_core.master0.m_arid();
-      $display("master0 araddr %h len=%d size=%d id=%d", araddr, len, size, arid);
 
       w_arready0 <= readReqFifo0.notFull();
 
       Bit#(4) objNumber = truncate(araddr >> 28);
-      Bit#(24) objOffset = truncate(araddr);
+      Bit#(28) objOffset = truncate(araddr);
 
       let objId = objIds[objNumber];
       let burstLen = 8 * (len + 1);
+      $display("master0 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
       readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
 
    endrule
 
    rule master0_rdata if (ready);
       let rdata = readDataFifo0.first;
-      //$display("master0 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+      $display("master0 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
 
       w_rvalid0 <= readDataFifo0.notEmpty();
       p2_core.master0.m_rvalid(readDataFifo0.notEmpty(),
@@ -153,13 +153,13 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let len    = p2_core.master1.m_awlen();
       let size   = p2_core.master1.m_awsize();
       let awid   = p2_core.master1.m_awid();
-      $display("master1 awaddr %h len=%d size=%d awid=%d", awaddr, len, size, awid);
       w_awready1 <= writeReqFifo1.notFull();
 
       Bit#(4)  objNumber = truncate(awaddr >> 28);
-      Bit#(24) objOffset = truncate(awaddr);
+      Bit#(28) objOffset = truncate(awaddr);
       let objId = objIds[objNumber];
       let burstLen = 8 * (len + 1);
+      $display("master1 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h", awaddr, len, size, awid, objId, objOffset);
       writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
    endrule
    rule master1_w if (p2_core.master1.m_wvalid());
@@ -200,15 +200,15 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let len    = p2_core.master1.m_arlen();
       let size   = p2_core.master1.m_arsize();
       let arid   = p2_core.master1.m_arid();
-      $display("master1 araddr %h len=%d size=%d id=%d", araddr, len, size, arid);
 
       w_arready1 <= readReqFifo1.notFull();
 
       Bit#(4) objNumber = truncate(araddr >> 28);
-      Bit#(24) objOffset = truncate(araddr);
+      Bit#(28) objOffset = truncate(araddr);
 
       let objId = objIds[objNumber];
       let burstLen = 8 * (len + 1);
+      $display("master1 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
       readReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
 
    endrule
