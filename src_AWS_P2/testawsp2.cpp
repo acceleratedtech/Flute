@@ -247,8 +247,9 @@ int main(int argc, char * const *argv)
 
     // load the app code into DRAM
     memset(dramBuffer, 0x42, flash_alloc_sz);
-    uint64_t elf_entry = loadElf(dramBuffer, elf_filename, dram_alloc_sz);
-    fprintf(stderr, "elf_entry=%08lx\n", elf_entry);
+    uint64_t tohost_address = 0;
+    uint64_t elf_entry = loadElf(dramBuffer, elf_filename, dram_alloc_sz, &tohost_address);
+    fprintf(stderr, "elf_entry=%08lx tohost_address=%08lx\n", elf_entry, tohost_address);
 
     // register the Flash memory object with the SoC (and program the MMU)
     fpga->register_region(7, dma->reference(romObject));

@@ -7,12 +7,12 @@
 #include <sys/stat.h>
 #include <gelf.h>
 
-uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_size)
+uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_size, uint64_t *tohost_address)
 {
     // Verify the elf library version
     if (elf_version(EV_CURRENT) == EV_NONE) {
         fprintf(stderr, "ERROR: loadElf: Failed to initialize the libelfg library!\n");
-	exit(1);
+        exit(1);
     }
 
     int fd = open(elf_filename, O_RDONLY);
@@ -23,7 +23,7 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
     if (elf_kind(e) != ELF_K_ELF) {
         elf_end(e);
         fprintf(stderr, "ERROR: loadElf: specified file '%s' is not an ELF file!\n", elf_filename);
-	exit(1);
+        exit(1);
     }
 
     // Get the ELF header
@@ -31,35 +31,35 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
     if (gelf_getehdr(e, & ehdr) == NULL) {
         elf_end(e);
         fprintf(stderr, "ERROR: loadElf: get_getehdr() failed: %s\n", elf_errmsg(-1));
-	exit(1);
+        exit(1);
     }
 
     // Is this a 32b or 64 ELF?
     if (gelf_getclass(e) == ELFCLASS32) {
-	fprintf(stdout, "loadElf: %s is a 32-bit ELF file\n", elf_filename);
-	//bitwidth = 32;
+        fprintf(stdout, "loadElf: %s is a 32-bit ELF file\n", elf_filename);
+        //bitwidth = 32;
     }
     else if (gelf_getclass(e) == ELFCLASS64) {
-	fprintf(stdout, "loadElf: %s is a 64-bit ELF file\n", elf_filename);
-	//bitwidth = 64;
-	Elf64_Ehdr *ehdr64 = elf64_getehdr(e);
-	fprintf(stderr, "loadElf: entry point %08lx\n", ehdr64->e_entry);
-	entry = ehdr64->e_entry;
+        fprintf(stdout, "loadElf: %s is a 64-bit ELF file\n", elf_filename);
+        //bitwidth = 64;
+        Elf64_Ehdr *ehdr64 = elf64_getehdr(e);
+        fprintf(stderr, "loadElf: entry point %08lx\n", ehdr64->e_entry);
+        entry = ehdr64->e_entry;
     }
 
     // Verify we are dealing with a RISC-V ELF
     if (ehdr.e_machine != 243) { // EM_RISCV is not defined, but this returns 243 when used with a valid elf file.
         elf_end(e);
         fprintf(stderr, "ERROR: loadElf: %s is not a RISC-V ELF file\n", elf_filename);
-	exit(1);
+        exit(1);
     }
     // Verify we are dealing with a little endian ELF
     if (ehdr.e_ident[EI_DATA] != ELFDATA2LSB) {
         elf_end(e);
         fprintf(stderr,
-		 "ERROR: loadElf: %s is a big-endian 64-bit RISC-V executable which is not supported\n",
-		 elf_filename);
-	exit(1);
+                 "ERROR: loadElf: %s is a big-endian 64-bit RISC-V executable which is not supported\n",
+                 elf_filename);
+        exit(1);
     }
 
     // Grab the string section index
@@ -67,69 +67,74 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
     Elf_Scn  *scn   = 0;
     while ((scn = elf_nextscn(e,scn)) != NULL) {
         // get the header information for this section
-	GElf_Shdr shdr;
+        GElf_Shdr shdr;
         gelf_getshdr(scn, & shdr);
 
-	char *sec_name = elf_strptr(e, shstrndx, shdr.sh_name);
-	fprintf(stdout, "Section %-16s: ", sec_name);
+        char *sec_name = elf_strptr(e, shstrndx, shdr.sh_name);
+        fprintf(stdout, "Section %-16s: ", sec_name);
 
-	if (strcmp(sec_name, ".tohost") == 0) {
-	}
-	// If we find a code/data section, load it into the model
-	else if (   ((shdr.sh_type == SHT_PROGBITS)
-		|| (shdr.sh_type == SHT_NOBITS)
-		|| (shdr.sh_type == SHT_INIT_ARRAY)
-		|| (shdr.sh_type == SHT_FINI_ARRAY))
-	    && ((shdr.sh_flags & SHF_WRITE)
-		|| (shdr.sh_flags & SHF_ALLOC)
-		|| (shdr.sh_flags & SHF_EXECINSTR))) {
+        // If we find a code/data section, load it into the model
+        if (   ((shdr.sh_type == SHT_PROGBITS)
+                || (shdr.sh_type == SHT_NOBITS)
+                || (shdr.sh_type == SHT_INIT_ARRAY)
+                || (shdr.sh_type == SHT_FINI_ARRAY))
+            && ((shdr.sh_flags & SHF_WRITE)
+                || (shdr.sh_flags & SHF_ALLOC)
+                || (shdr.sh_flags & SHF_EXECINSTR))) {
 
-	    Elf_Data *data = 0;
-	    data = elf_getdata (scn, data);
+            Elf_Data *data = 0;
+            data = elf_getdata (scn, data);
 
-	    // n_initialized += data->d_size;
-	    size_t max_addr = (shdr.sh_addr + data->d_size - 1) & ~0xC0000000ul;    // shdr.sh_size + 4;
+            // n_initialized += data->d_size;
+            size_t max_addr = (shdr.sh_addr + data->d_size - 1) & ~0xC0000000ul;    // shdr.sh_size + 4;
 
-	    if (max_addr >= max_mem_size) {
-		fprintf(stdout, "INTERNAL ERROR: max_addr (0x%0lx) > buffer size (0x%0lx)\n",
-			 max_addr, max_mem_size);
-		fprintf(stdout, "    Please increase the #define in this program, recompile, and run again\n");
-		fprintf(stdout, "    Abandoning this run\n");
-		//exit(1);
-	    }
+            if (strcmp(sec_name, ".tohost") == 0 || strcmp(sec_name, ".htif") == 0) {
+                if (tohost_address != 0) {
+                    *tohost_address = shdr.sh_addr;
+                }
+            } else {
+                if (max_addr >= max_mem_size) {
+                    fprintf(stdout, "INTERNAL ERROR: max_addr (0x%0lx) > buffer size (0x%0lx)\n",
+                            max_addr, max_mem_size);
+                    fprintf(stdout, "    Please increase the #define in this program, recompile, and run again\n");
+                    fprintf(stdout, "    Abandoning this run\n");
+                    //exit(1);
+                }
 
-	    if (shdr.sh_type != SHT_NOBITS) {
-		memcpy (& (dram_buffer [shdr.sh_addr & ~0xC0000000ul]), data->d_buf, data->d_size);
-	    }
-	    fprintf (stdout, "addr %16lx to addr %16lx; size 0x%8lx (= %0ld) bytes\n",
-		     shdr.sh_addr, shdr.sh_addr + data->d_size, data->d_size, data->d_size);
+                if (shdr.sh_type != SHT_NOBITS) {
+                    memcpy (& (dram_buffer [shdr.sh_addr & ~0xC0000000ul]), data->d_buf, data->d_size);
+                }
+            }
 
-	}
+            fprintf (stdout, "addr %16lx to addr %16lx; size 0x%8lx (= %0ld) bytes\n",
+                     shdr.sh_addr, shdr.sh_addr + data->d_size, data->d_size, data->d_size);
 
-	// If we find the symbol table, search for symbols of interest
-	else if (shdr.sh_type == SHT_SYMTAB) {
+        }
 
- 	    // Get the section data
-	    Elf_Data *data = 0;
-	    data = elf_getdata(scn, data);
+        // If we find the symbol table, search for symbols of interest
+        else if (shdr.sh_type == SHT_SYMTAB) {
 
-	    // Get the number of symbols in this section
-	    int symbols = shdr.sh_size / shdr.sh_entsize;
+            // Get the section data
+            Elf_Data *data = 0;
+            data = elf_getdata(scn, data);
 
-	    // search for the uart_default symbols we need to potentially modify.
-	    GElf_Sym sym;
-	    for (int i = 0; i < symbols; ++i) {
-	        gelf_getsym(data, i, &sym);
+            // Get the number of symbols in this section
+            int symbols = shdr.sh_size / shdr.sh_entsize;
 
-		// get the name of the symbol
-		//char *name = elf_strptr(e, shdr.sh_link, sym.st_name);
+            // search for the uart_default symbols we need to potentially modify.
+            GElf_Sym sym;
+            for (int i = 0; i < symbols; ++i) {
+                gelf_getsym(data, i, &sym);
 
-	    }
+                // get the name of the symbol
+                //char *name = elf_strptr(e, shdr.sh_link, sym.st_name);
 
-	}
-	else {
-	    fprintf(stdout, "Ignored\n");
-	}
+            }
+
+        }
+        else {
+            fprintf(stdout, "Ignored\n");
+        }
     }
 
     elf_end(e);
