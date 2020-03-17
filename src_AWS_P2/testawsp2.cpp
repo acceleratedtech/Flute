@@ -40,6 +40,17 @@ public:
         sem_post(&sem);
     }
 
+    virtual void tandem_packet(const uint32_t num_bytes, const bsvvector_Luint8_t_L72 bytes) {
+        //uint32_t *words = (uint32_t *)bytes;
+        fprintf(stderr, "[TV] %d bytes", num_bytes);
+	if (num_bytes < 72) {
+	    for (uint32_t i = 0; i < num_bytes; i++) {
+		fprintf(stderr, " %02x", bytes[71 - i] & 0xFF);
+	    }
+	}
+        fprintf(stderr, "\n");
+    }
+
     void wait() {
         sem_wait(&sem);
     }

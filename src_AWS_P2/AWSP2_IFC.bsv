@@ -1,4 +1,4 @@
-
+import Vector :: *;
 
 interface AWSP2_Request;
   method Action set_debug_verbosity(Bit#(4) verbosity);
@@ -8,6 +8,7 @@ interface AWSP2_Request;
 
   method Action register_region(Bit#(32) region, Bit#(32) objectId);
   method Action memory_ready();
+  method Action capture_tv_info(Bool c);
 
   method Action io_rdata(Bit#(64) data, Bit#(8) rid, Bit#(8) rresp);
   method Action io_bdone(Bit#(8) bresp, Bit#(8) bid);
@@ -18,4 +19,5 @@ interface AWSP2_Response;
   method Action io_awaddr(Bit#(32) awaddr, Bit#(8) awlen, Bit#(8) awsize, Bit#(8) awid);
   method Action io_araddr(Bit#(32) araddr, Bit#(8) arlen, Bit#(8) arsize, Bit#(8) arid);
   method Action io_wdata(Bit#(64) wdata, Bit#(8) wstrb);
+  method Action tandem_packet(Bit#(32) num_bytes, Vector#(72, Bit#(8)) bytes);
 endinterface

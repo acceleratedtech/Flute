@@ -314,6 +314,24 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    endrule
 `endif
 
+`ifdef INCLUDE_TANDEM_VERIF
+   Reg#(Bool) rg_capture_tv_info <- mkReg(True);
+   let tvFifo <- mkFIFOF();
+   rule tv_out;
+      if (p2_core.tv_verifier_info_tx.m_tvalid() && rg_capture_tv_info) begin
+	  let tv_bits = p2_core.tv_verifier_info_tx.m_tdata();
+	  let tv_strb = p2_core.tv_verifier_info_tx.m_tstrb();
+          tvFifo.enq(tv_bits);
+      end
+      p2_core.tv_verifier_info_tx.m_tready(tvFifo.notFull());
+   endrule
+   rule tv_ready;
+      let tv_bits <- toGet(tvFifo).get();
+      Info_CPU_to_Verifier info = unpack(tv_bits);
+      response.tandem_packet(info.num_bytes, info.vec_bytes);
+   endrule
+`endif
+
    MemReadClient#(DataBusWidth) readClient0 = (interface MemReadClient;
       interface Get readReq = toGet(readReqFifo0);
       interface Put readData;
@@ -361,6 +379,9 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       method Action memory_ready();
           $display("memory_ready");
           rg_ready <= True;
+      endmethod
+      method Action capture_tv_info(Bool c);
+         rg_capture_tv_info <= c;
       endmethod
    endinterface
 
