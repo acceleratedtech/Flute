@@ -136,7 +136,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          || w_arready0
          || w_rvalid0
          || to_slave0.m_rready())
-         $display("master0 arvalid %d arready %d rvalid %d rready %d", to_slave0.m_arvalid(), w_arready0, w_rvalid0, to_slave0.m_rready());
+         if (rg_verbosity > 0) $display("master0 arvalid %d arready %d rvalid %d rready %d", to_slave0.m_arvalid(), w_arready0, w_rvalid0, to_slave0.m_rready());
    endrule
 
    rule master0_aw if (rg_ready);
@@ -150,7 +150,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           Bit#(28) objOffset = truncate(awaddr);
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
-          $display("master0 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h", awaddr, len, size, awid, objId, objOffset);
+          if (rg_verbosity > 0) $display("master0 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h burstLen=%d", awaddr, len, size, awid, objId, objOffset, burstLen);
           writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
       end
       w_awready0 <= writeReqFifo0.notFull();
@@ -161,8 +161,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let wdata = to_slave0.m_wdata;
           let wstrb = to_slave0.m_wstrb;
           let wlast = to_slave0.m_wlast;
-          $display("master0 wdata %h wstrb %h", wdata, wstrb);
-          writeDataFifo0.enq(MemData { data: wdata, tag: 0, last: wlast});
+          if (rg_verbosity > 0) $display("master0 wdata %h wstrb %h", wdata, wstrb);
+          writeDataFifo0.enq(MemData { data: wdata, tag: 0, byte_enables: wstrb, last: wlast});
        end
        w_wready0 <= writeDataFifo0.notFull();
     endrule
@@ -190,7 +190,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
-          $display("master0 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
+          if (rg_verbosity > 0) $display("master0 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
           readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
       end
       w_arready0 <= readReqFifo0.notFull();
@@ -199,7 +199,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    rule master0_rdata if (rg_ready);
       let rdata = readDataFifo0.first;
-      $display("master0 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+      if (rg_verbosity > 0) $display("master0 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
 
       w_rvalid0 <= readDataFifo0.notEmpty();
       to_slave0.m_rvalid(readDataFifo0.notEmpty(),
@@ -241,7 +241,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           Bit#(28) objOffset = truncate(awaddr);
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
-          $display("master1 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h", awaddr, len, size, awid, objId, objOffset);
+          $display("master1 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h burstLen=%d", awaddr, len, size, awid, objId, objOffset, burstLen);
           writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
       end
       w_awready1 <= writeReqFifo1.notFull();
@@ -253,7 +253,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let wstrb = to_slave1.m_wstrb;
           let wlast = to_slave1.m_wlast;
           $display("master1 wdata %h wstrb %h", wdata, wstrb);
-          writeDataFifo1.enq(MemData { data: wdata, tag: 1, last: wlast});
+          writeDataFifo1.enq(MemData { data: wdata, tag: 1, byte_enables: wstrb, last: wlast});
        end
        w_wready1 <= writeDataFifo1.notFull();
     endrule
@@ -315,7 +315,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 `endif
 
 `ifdef INCLUDE_TANDEM_VERIF
-   Reg#(Bool) rg_capture_tv_info <- mkReg(True);
+   Reg#(Bool) rg_capture_tv_info <- mkReg(False);
    let tvFifo <- mkFIFOF();
    rule tv_out;
       if (p2_core.tv_verifier_info_tx.m_tvalid() && rg_capture_tv_info) begin
@@ -377,7 +377,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          objIds[region] <= truncate(objectId);
       endmethod
       method Action memory_ready();
-          $display("memory_ready");
+          if (rg_verbosity > 0) $display("memory_ready");
           rg_ready <= True;
       endmethod
       method Action capture_tv_info(Bool c);
