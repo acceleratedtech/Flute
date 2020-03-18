@@ -114,13 +114,20 @@ public:
         dmi_write(DM_CONTROL_REG, ~DM_CONTROL_RESUMEREQ & dmi_read(DM_CONTROL_REG));
     }
 
-    void io_awaddr(uint32_t awaddr, uint8_t awlen, uint8_t awsize, uint8_t awid) {
+    void io_awaddr(uint32_t awaddr, uint16_t awlen, uint16_t awid) {
+	fprintf(stderr, "io_awaddr awaddr=%x\n", awaddr);
     }
 
-    void io_araddr(uint32_t araddr, uint8_t arlen, uint8_t arsize, uint8_t arid) {
+    void io_araddr(uint32_t araddr, uint16_t arlen, uint16_t arid) {
+	fprintf(stderr, "io_araddr araddr=%x arlen=%d\n", araddr, arlen);
+	for (int i = 0; i < arlen / 8; i++) {
+	    int last = i == ((arlen / 8) - 1);
+	    request->io_rdata(0, arid, 0, last);
+	}
     }
 
     void io_wdata(uint64_t wdata, uint8_t wstrb) {
+	fprintf(stderr, "io_wdata wdata=%lx wstrb=%x\n", wdata, wstrb);
     }
 
     void set_fabric_verbosity(uint8_t verbosity) {
@@ -177,7 +184,7 @@ int main(int argc, char * const *argv)
     const char *bootrom_filename = 0;
     const char *elf_filename = 0;
     const char *flash_filename = 0;
-    int cpuverbosity = 1;
+    int cpuverbosity = 0;
     uint32_t entry = 0;
     while (1) {
         int option_index = optind ? optind : 1;

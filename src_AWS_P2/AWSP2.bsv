@@ -44,8 +44,11 @@ import AWSP2_IFC   :: *;
 
 interface AWSP2;
   interface AWSP2_Request request;
-  interface Vector#(2, MemReadClient#(DataBusWidth)) readClients;
-  interface Vector#(2, MemWriteClient#(DataBusWidth)) writeClients;
+  interface Vector#(1, MemReadClient#(DataBusWidth)) readClients;
+  interface Vector#(1, MemWriteClient#(DataBusWidth)) writeClients;
+`ifdef BOARD_awsf1
+   interface AWSP2_Pin_IFC pins;
+`endif
 endinterface
 
    Fabric_Addr ddr4_0_uncached_addr_base = 'h_8000_0000;
@@ -115,8 +118,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    FIFOF#(MemRequest) readReqFifo1 <- mkFIFOF();
    FIFOF#(MemRequest) writeReqFifo1 <- mkFIFOF();
-   FIFOF#(MemData#(DataBusWidth))   readDataFifo1 <- mkSizedBRAMFIFOF(64);
-   FIFOF#(MemData#(DataBusWidth))   writeDataFifo1 <- mkSizedBRAMFIFOF(64);
+   FIFOF#(MemData#(64)) readDataFifo1 <- mkSizedBRAMFIFOF(64);
+   FIFOF#(MemData#(64)) writeDataFifo1 <- mkSizedBRAMFIFOF(64);
    FIFOF#(Bit#(MemTagSize)) doneFifo1 <- mkFIFOF();
 
    Wire#(Bool) w_arready1 <- mkDWire(False);
@@ -125,6 +128,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    Wire#(Bool) w_rready1  <- mkDWire(False);
    Wire#(Bool) w_rvalid1  <- mkDWire(False);
 
+//`ifndef BOARD_awsf1
    rule master0_handshake;
       to_slave0.m_awready(w_awready0);
       to_slave0.m_arready(w_arready0);
@@ -215,6 +219,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          readDataFifo0.deq();
       end
    endrule
+//`endif
 
    rule master1_handshake;
       to_slave1.m_awready(w_awready1);
@@ -300,11 +305,23 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
                                rdata.last,
                                0); // ruser
 
-
       if (to_slave1.m_rready()) begin
           //$display("master1_rdata_deq rvalid %d rready %d", w_rvalid1, to_slave1.m_rready());
          readDataFifo1.deq();
       end
+   endrule
+
+   rule master1_io_araddr;
+       let req <- toGet(readReqFifo1).get();
+       response.io_araddr(truncate(req.offset), extend(req.burstLen), extend(req.tag));
+   endrule
+   rule master1_io_awaddr;
+       let req <- toGet(writeReqFifo1).get();
+       response.io_awaddr(truncate(req.offset), extend(req.burstLen), extend(req.tag));
+   endrule
+   rule master1_io_wdata;
+       let mdata <- toGet(writeDataFifo1).get();
+       response.io_wdata(mdata.data, 0);
    endrule
 
 `ifdef INCLUDE_GDB_CONTROL
@@ -346,26 +363,12 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       interface Put writeDone = toPut(doneFifo0);
    endinterface );
 
-   MemReadClient#(DataBusWidth) readClient1 = (interface MemReadClient;
-      interface Get readReq = toGet(readReqFifo1);
-      interface Put readData;
-        method Action put(MemData#(DataBusWidth) rdata);
-          readDataFifo1.enq(rdata);
-        endmethod
-      endinterface
-   endinterface );
-   MemWriteClient#(DataBusWidth) writeClient1 = (interface MemWriteClient;
-      interface Get writeReq = toGet(writeReqFifo1);
-      interface Get writeData = toGet(writeDataFifo1);
-      interface Put writeDone = toPut(doneFifo1);
-   endinterface );
-
    interface AWSP2_Request request;
       method Action dmi_read(Bit#(7) addr);
 `ifdef INCLUDE_GDB_CONTROL
          p2_core.dmi.read_addr(addr);
 `else
-        response.dmi_read_data('hbeef);
+         //response.dmi_read_data('hbeef);
 `endif
       endmethod
       method Action dmi_write(Bit#(7) addr, Bit#(32) data);
@@ -385,9 +388,22 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          rg_capture_tv_info <= c;
 `endif
       endmethod
+
+      method Action io_rdata(Bit#(64) data, Bit#(16) rid, Bit#(8) rresp, Bool last);
+         readDataFifo1.enq(MemData { data: data, tag: truncate(rid), last: last });
+      endmethod
+      method Action io_bdone(Bit#(16) bid, Bit#(8) bresp);
+         doneFifo1.enq(truncate(bid));
+      endmethod
    endinterface
 
-   interface readClients = vec(readClient0, readClient1);
-   interface writeClients = vec(writeClient0, writeClient1);
+   interface readClients = vec(readClient0);
+   interface writeClients = vec(writeClient0);
+
+`ifdef BOARD_awsf1
+   interface AWSP2_Pin_IFC pins;
+      interface ddr = to_slave0;
+   endinterface
+`endif
 
 endmodule
