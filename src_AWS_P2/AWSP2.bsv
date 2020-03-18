@@ -381,7 +381,9 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           rg_ready <= True;
       endmethod
       method Action capture_tv_info(Bool c);
+`ifdef INCLUDE_TANDEM_VERIF
          rg_capture_tv_info <= c;
+`endif
       endmethod
    endinterface
 

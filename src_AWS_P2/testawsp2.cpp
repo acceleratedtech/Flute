@@ -181,7 +181,7 @@ int main(int argc, char * const *argv)
     uint32_t entry = 0;
     while (1) {
         int option_index = optind ? optind : 1;
-        char c = getopt_long(argc, argv, "b:e:",
+        char c = getopt_long(argc, argv, "b:e:h",
                              long_options, &option_index);
         if (c == -1)
             break;
@@ -199,6 +199,9 @@ int main(int argc, char * const *argv)
         case 'f':
             flash_filename = optarg;
             break;
+        case 'h':
+	    usage(argv[0]);
+	    return 2;
         case 'v':
             cpuverbosity = strtoul(optarg, 0, 0);
             break;
@@ -314,7 +317,7 @@ int main(int argc, char * const *argv)
         }
         fpga->resume();
 
-        sleep(1);
+        sleep(600);
     }
     return 0;
 }
