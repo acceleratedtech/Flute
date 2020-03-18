@@ -10,131 +10,8 @@
 #include "GeneratedTypes.h"
 #include "dmaManager.h"
 #include <portal.h>
-#include "AWSP2_Request.h"
-#include "AWSP2_Response.h"
+#include "fpga.h"
 #include "loadelf.h"
-
-#define DM_CONTROL_REG 0x10
-#define DM_STATUS_REG 0x11
-#define DM_HALTSUM1_REG 0x13
-#define DM_COMMAND_REG 0x17
-
-#define DM_CONTROL_HALTREQ (1 << 31)
-#define DM_CONTROL_RESUMEREQ (1 << 30)
-
-#define DM_COMMAND_ACCESS_REGISTER 0
-
-class AWSP2 : public AWSP2_ResponseWrapper {
-    sem_t sem;
-    AWSP2_RequestProxy *request;
-    uint32_t rsp_data;
-public:
-    AWSP2(int id)
-        : AWSP2_ResponseWrapper(id) {
-        sem_init(&sem, 0, 0);
-        request = new AWSP2_RequestProxy(IfcNames_AWSP2_RequestS2H);
-    }
-    virtual void dmi_read_data(uint32_t rsp_data) {
-        //fprintf(stderr, "dmi_read_data data=%08x\n", rsp_data);
-        this->rsp_data = rsp_data;
-        sem_post(&sem);
-    }
-
-    virtual void tandem_packet(const uint32_t num_bytes, const bsvvector_Luint8_t_L72 bytes) {
-        //uint32_t *words = (uint32_t *)bytes;
-        fprintf(stderr, "[TV] %d bytes", num_bytes);
-	if (num_bytes < 72) {
-	    for (uint32_t i = 0; i < num_bytes; i++) {
-		fprintf(stderr, " %02x", bytes[71 - i] & 0xFF);
-	    }
-	}
-        fprintf(stderr, "\n");
-    }
-
-    void wait() {
-        sem_wait(&sem);
-    }
-
-    uint32_t dmi_read(uint32_t addr) {
-        request->dmi_read(addr);
-        wait();
-        return rsp_data;
-    }
-
-    void dmi_write(uint32_t addr, uint32_t data) {
-        request->dmi_write(addr, data);
-    }
-
-    void register_region(uint32_t region, uint32_t objid) {
-        request->register_region(region, objid);
-    }
-
-    void memory_ready() {
-        request->memory_ready();
-    }
-
-    uint64_t read_csr(int i) {
-        dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | i);
-        uint64_t val = dmi_read(5);
-        val <<=  32;
-        val |= dmi_read(4);
-        return val;
-    }
-
-    uint64_t read_gpr(int i) {
-        dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
-        uint64_t val = dmi_read(5);
-        val <<=  32;
-        val |= dmi_read(4);
-        return val;
-    }
-
-    void write_gpr(int i, uint64_t val) {
-        dmi_write(5, (val >> 32) & 0xFFFFFFFF);
-        dmi_write(4, (val >>  0) & 0xFFFFFFFF);
-        dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | (1 << 16) | 0x1000 | i);
-    }
-
-    void halt(int timeout = 100) {
-        dmi_write(DM_CONTROL_REG, DM_CONTROL_HALTREQ | dmi_read(DM_CONTROL_REG));
-        for (int i = 0; i < 100; i++) {
-            uint32_t status = dmi_read(DM_STATUS_REG);
-            if (status & (1 << 9))
-                break;
-        }
-        dmi_write(DM_CONTROL_REG, ~DM_CONTROL_HALTREQ & dmi_read(DM_CONTROL_REG));
-    }
-    void resume(int timeout = 100) {
-        dmi_write(DM_CONTROL_REG, DM_CONTROL_RESUMEREQ | dmi_read(DM_CONTROL_REG));
-        for (int i = 0; i < 100; i++) {
-            uint32_t status = dmi_read(DM_STATUS_REG);
-            if (status & (1 << 17))
-                break;
-        }
-        dmi_write(DM_CONTROL_REG, ~DM_CONTROL_RESUMEREQ & dmi_read(DM_CONTROL_REG));
-    }
-
-    void io_awaddr(uint32_t awaddr, uint16_t awlen, uint16_t awid) {
-	fprintf(stderr, "io_awaddr awaddr=%x\n", awaddr);
-    }
-
-    void io_araddr(uint32_t araddr, uint16_t arlen, uint16_t arid) {
-	fprintf(stderr, "io_araddr araddr=%x arlen=%d\n", araddr, arlen);
-	for (int i = 0; i < arlen / 8; i++) {
-	    int last = i == ((arlen / 8) - 1);
-	    request->io_rdata(0, arid, 0, last);
-	}
-    }
-
-    void io_wdata(uint64_t wdata, uint8_t wstrb) {
-	fprintf(stderr, "io_wdata wdata=%lx wstrb=%x\n", wdata, wstrb);
-    }
-
-    void set_fabric_verbosity(uint8_t verbosity) {
-        request->set_fabric_verbosity(verbosity);
-    }
-};
-
 
 int copyFile(char *buffer, const char *filename, size_t buffer_size)
 {
@@ -270,8 +147,9 @@ int main(int argc, char * const *argv)
     // unblock memory accesses in the SoC
     fpga->memory_ready();
 
-    fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
+    fprintf(stderr, "status  %x\n", fpga->dmi_read(DM_STATUS_REG));
     fprintf(stderr, "control %x\n", fpga->dmi_read(DM_CONTROL_REG));
+    fprintf(stderr, "sbcs    %x\n", fpga->dmi_read(DM_SBCS_REG));
     fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
     fprintf(stderr, "asserting haltreq\n");
     fpga->dmi_write(DM_CONTROL_REG, DM_CONTROL_HALTREQ | fpga->dmi_read(DM_CONTROL_REG));
@@ -293,6 +171,19 @@ int main(int argc, char * const *argv)
     }
     if (!entry)
         entry = elf_entry;
+
+    // copy sm.state as a test
+    for (int i = 0; i < 360; i += 8) {
+	uint64_t *image = (uint64_t *)dramBuffer;
+	uint32_t addr = 0x80000000 + i;
+	fpga->write_mem(addr, dramBuffer[i / 8]);
+	uint64_t readback = fpga->read_mem(0x80000000 + i);
+	if (image[i / 8] != readback) {
+	    fprintf(stderr, "mem[%08x] expected %08lx actual %08lx\n",
+		    addr, image[i / 8], readback);
+	}
+    }
+
     fprintf(stderr, "setting pc val %#08x.%#08x\n", 0, entry);
     fpga->dmi_write(5, 0);
     fpga->dmi_write(4, entry);
@@ -324,7 +215,7 @@ int main(int argc, char * const *argv)
         }
         fpga->resume();
 
-        sleep(600);
+        sleep(1);
     }
     return 0;
 }
