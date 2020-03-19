@@ -63,15 +63,15 @@ endinterface
 module mkAXI4_Fabric_2x2(AXI4_Fabric_IFC#(2, 2, 4, 64, 64, 0));
 
     function Tuple2 #(Bool, Bit #(TLog #(2))) fn_addr_to_slave_num(Bit #(64) addr);
-	if ((ddr4_0_uncached_addr_base <= addr) && (addr < ddr4_0_uncached_addr_lim)) begin
-	   return tuple2(True, 0);
-	end
-	else if ((ddr4_0_cached_addr_base <= addr) && (addr < ddr4_0_cached_addr_lim)) begin
-	   return tuple2(True, 0);
-	end
-	else begin
-	   return tuple2(True, 1);
-	end
+        if ((ddr4_0_uncached_addr_base <= addr) && (addr < ddr4_0_uncached_addr_lim)) begin
+           return tuple2(True, 0);
+        end
+        else if ((ddr4_0_cached_addr_base <= addr) && (addr < ddr4_0_cached_addr_lim)) begin
+           return tuple2(True, 0);
+        end
+        else begin
+           return tuple2(True, 1);
+        end
     endfunction
 
    AXI4_Fabric_IFC#(2, 2, 4, 64, 64, 0) axiFabric <- mkAXI4_Fabric(fn_addr_to_slave_num);
@@ -325,9 +325,22 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    endrule
 
 `ifdef INCLUDE_GDB_CONTROL
-   rule dmi_rsp;
+   rule dmi_rsp_rl;
       let rdata <- p2_core.dmi.read_data();
+      $display("dmi_rsp data %h", rdata);
       response.dmi_read_data(rdata);
+   endrule
+   let dmiReadFifo <- mkFIFOF();
+   let dmiWriteFifo <- mkFIFOF();
+   rule dmi_read_rl;
+      let addr <- toGet(dmiReadFifo).get();
+      //$display("dmi_read addr %h", addr);
+      p2_core.dmi.read_addr(addr);
+   endrule
+   rule dmi_write_rl;
+      let req <- toGet(dmiWriteFifo).get();
+      //$display("dmi_write addr %h data %h", tpl_1(req), tpl_2(req));
+      p2_core.dmi.write(tpl_1(req), tpl_2(req));
    endrule
 `endif
 
@@ -336,8 +349,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    let tvFifo <- mkFIFOF();
    rule tv_out;
       if (p2_core.tv_verifier_info_tx.m_tvalid() && rg_capture_tv_info) begin
-	  let tv_bits = p2_core.tv_verifier_info_tx.m_tdata();
-	  let tv_strb = p2_core.tv_verifier_info_tx.m_tstrb();
+          let tv_bits = p2_core.tv_verifier_info_tx.m_tdata();
+          let tv_strb = p2_core.tv_verifier_info_tx.m_tstrb();
           tvFifo.enq(tv_bits);
       end
       p2_core.tv_verifier_info_tx.m_tready(tvFifo.notFull());
@@ -365,15 +378,15 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    interface AWSP2_Request request;
       method Action dmi_read(Bit#(7) addr);
+        //$display("dmi_read req addr %h", addr);
 `ifdef INCLUDE_GDB_CONTROL
-         p2_core.dmi.read_addr(addr);
-`else
-         //response.dmi_read_data('hbeef);
+         dmiReadFifo.enq(addr);
 `endif
       endmethod
       method Action dmi_write(Bit#(7) addr, Bit#(32) data);
+        //$display("dmi_write req addr %h data %h", addr, data);
 `ifdef INCLUDE_GDB_CONTROL
-         p2_core.dmi.write(addr, data);
+        dmiWriteFifo.enq(tuple2(addr, data));
 `endif
       endmethod
       method Action register_region(Bit#(32) region, Bit#(32) objectId);
