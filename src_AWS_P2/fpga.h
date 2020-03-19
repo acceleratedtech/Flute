@@ -1,3 +1,5 @@
+#pragma once
+
 #include "AWSP2_Request.h"
 #include "AWSP2_Response.h"
 
@@ -37,9 +39,10 @@ class AWSP2 : public AWSP2_ResponseWrapper {
     sem_t sem;
     AWSP2_RequestProxy *request;
     uint32_t rsp_data;
+    uint32_t last_addr;
 public:
     AWSP2(int id)
-        : AWSP2_ResponseWrapper(id) {
+      : AWSP2_ResponseWrapper(id), last_addr(0) {
         sem_init(&sem, 0, 0);
         request = new AWSP2_RequestProxy(IfcNames_AWSP2_RequestS2H);
     }
@@ -106,29 +109,59 @@ public:
 
     void sbcs_wait() {
 	uint32_t sbcs = 0;
+	int count = 0;
 	do {
 	    sbcs = dmi_read(DM_SBCS_REG);
+	    if (++count % 2) {
+		fprintf(stderr, "sbcs=%x\n", sbcs);
+	    }
 	} while (sbcs & SBCS_SBBUSY);
     }
 
-    uint64_t read_mem(uint32_t addr) {
-        dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
-	dmi_write(DM_SBADDRESS0_REG, addr);
+    uint32_t read32(uint32_t addr) {
+        if (last_addr != addr) {
+	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+	    dmi_write(DM_SBADDRESS0_REG, addr);
+	}
+	sbcs_wait();
+        uint64_t lo = dmi_read(DM_SBDATA0_REG);
+	last_addr = addr + 4;
+        return lo;
+    }
+
+    uint64_t read64(uint32_t addr) {
+        if (last_addr != addr) {
+	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+	    dmi_write(DM_SBADDRESS0_REG, addr);
+	}
+	sbcs_wait();
         uint64_t lo = dmi_read(DM_SBDATA0_REG);
 	sbcs_wait();
         uint64_t hi = dmi_read(DM_SBDATA0_REG);
-	sbcs_wait();
+	last_addr = addr + 8;
         return (hi << 32) | lo;
     }
 
-    void write_mem(uint32_t addr, uint64_t val) {
-        dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
-	dmi_write(DM_SBADDRESS0_REG, addr);
+    void write32(uint32_t addr, uint32_t val) {
+        if (last_addr != addr) {
+	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
+	    dmi_write(DM_SBADDRESS0_REG, addr);
+	}
 	sbcs_wait();
+        dmi_write(DM_SBDATA0_REG, (val >>  0) & 0xFFFFFFFF);
+	last_addr = addr + 4;
+    }
+
+    void write64(uint32_t addr, uint64_t val) {
+        if (last_addr != addr) {
+	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
+	    dmi_write(DM_SBADDRESS0_REG, addr);
+	}
         dmi_write(DM_SBDATA0_REG, (val >>  0) & 0xFFFFFFFF);
 	sbcs_wait();
         dmi_write(DM_SBDATA0_REG, (val >>  32) & 0xFFFFFFFF);
 	sbcs_wait();
+	last_addr = addr + 8;
     }
 
     void halt(int timeout = 100) {
@@ -170,6 +203,3 @@ public:
         request->set_fabric_verbosity(verbosity);
     }
 };
-
-
-

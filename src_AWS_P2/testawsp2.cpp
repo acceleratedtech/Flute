@@ -48,6 +48,7 @@ const struct option long_options[] = {
     { "elf",     required_argument, 0, 'e' },
     { "entry",   required_argument, 0, 'E' },
     { "flash",   required_argument, 0, 'f' },
+    { "usemem",  required_argument, 0, 'M' },
     { 0,         0,                 0, 0 }
 };
 
@@ -63,6 +64,7 @@ int main(int argc, char * const *argv)
     const char *flash_filename = 0;
     int cpuverbosity = 0;
     uint32_t entry = 0;
+    int usemem = 0;
     while (1) {
         int option_index = optind ? optind : 1;
         char c = getopt_long(argc, argv, "b:e:h",
@@ -85,6 +87,9 @@ int main(int argc, char * const *argv)
             break;
         case 'h':
 	    usage(argv[0]);
+	    return 2;
+        case 'M':
+            usemem = 1;
 	    return 2;
         case 'v':
             cpuverbosity = strtoul(optarg, 0, 0);
@@ -135,7 +140,10 @@ int main(int argc, char * const *argv)
     // load the app code into DRAM
     memset(dramBuffer, 0x42, flash_alloc_sz);
     uint64_t tohost_address = 0;
-    uint64_t elf_entry = loadElf(dramBuffer, elf_filename, dram_alloc_sz, &tohost_address);
+    P2Memory mem(dramBuffer);
+    AWSP2_Memory fpgamem(fpga);
+    IMemory *memifc = usemem ? static_cast<IMemory *>(&mem) : static_cast<IMemory *>(&fpgamem);
+    uint64_t elf_entry = loadElf(memifc, elf_filename, dram_alloc_sz, &tohost_address);
     fprintf(stderr, "elf_entry=%08lx tohost_address=%08lx\n", elf_entry, tohost_address);
 
     // register the Flash memory object with the SoC (and program the MMU)
@@ -171,18 +179,6 @@ int main(int argc, char * const *argv)
     }
     if (!entry)
         entry = elf_entry;
-
-    // copy sm.state as a test
-    for (int i = 0; i < 360; i += 8) {
-	uint64_t *image = (uint64_t *)dramBuffer;
-	uint32_t addr = 0x80000000 + i;
-	fpga->write_mem(addr, dramBuffer[i / 8]);
-	uint64_t readback = fpga->read_mem(0x80000000 + i);
-	if (image[i / 8] != readback) {
-	    fprintf(stderr, "mem[%08x] expected %08lx actual %08lx\n",
-		    addr, image[i / 8], readback);
-	}
-    }
 
     fprintf(stderr, "setting pc val %#08x.%#08x\n", 0, entry);
     fpga->dmi_write(5, 0);

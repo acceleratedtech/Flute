@@ -6,8 +6,80 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <gelf.h>
+#include "loadelf.h"
 
-uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_size, uint64_t *tohost_address)
+void IMemory::read(uint32_t start_addr, uint32_t *data, size_t num_bytes)
+{
+    for (size_t i = 0; i < num_bytes; i += 4) {
+	data[i / 4] = read32(start_addr + i);
+    }
+}
+
+void IMemory::write(uint32_t start_addr, const uint32_t *data, size_t num_bytes)
+{
+    fprintf(stderr, "IMemory::write addr %x num_bytes %ld\n", start_addr, num_bytes);
+    for (size_t i = 0; i < num_bytes; i += 4) {
+	fprintf(stderr, ".");
+	write32(start_addr + i, data[i / 4]);
+    }
+    fprintf(stderr, "\n");
+}
+
+P2Memory::P2Memory(uint8_t *buffer)
+    : buffer(buffer) {
+}
+
+uint32_t P2Memory::read32(uint32_t addr)
+{
+    addr &= ~0xC0000000;
+    uint32_t *intbuffer = (uint32_t *)buffer;
+    return intbuffer[addr / 4];
+}
+
+void P2Memory::write32(uint32_t addr, uint32_t data)
+{
+    addr &= ~0xC0000000;
+    uint32_t *intbuffer = (uint32_t *)buffer;
+    intbuffer[addr / 4] = data;
+}
+
+uint64_t P2Memory::read64(uint32_t addr)
+{
+    addr &= ~0xC0000000;
+    uint64_t *longbuffer = (uint64_t *)buffer;
+    return longbuffer[addr / 8];
+}
+
+void P2Memory::write64(uint32_t addr, uint64_t data)
+{
+    addr &= ~0xC0000000;
+    uint64_t *longbuffer = (uint64_t *)buffer;
+    longbuffer[addr / 8] = data;
+}
+
+AWSP2_Memory::AWSP2_Memory(AWSP2 *fpga) : fpga(fpga) {
+}
+uint32_t AWSP2_Memory::read32(uint32_t addr)
+{
+    return fpga->read32(addr);
+}
+
+uint64_t AWSP2_Memory::read64(uint32_t addr)
+{
+    return fpga->read64(addr);
+}
+
+void AWSP2_Memory::write32(uint32_t addr, uint32_t data)
+{
+    fpga->write32(addr, data);
+}
+
+void AWSP2_Memory::write64(uint32_t addr, uint64_t data)
+{
+    fpga->write64(addr, data);
+}
+
+uint64_t loadElf(IMemory *mem, const char *elf_filename, size_t max_mem_size, uint64_t *tohost_address)
 {
     // Verify the elf library version
     if (elf_version(EV_CURRENT) == EV_NONE) {
@@ -102,7 +174,7 @@ uint64_t loadElf(uint8_t *dram_buffer, const char *elf_filename, size_t max_mem_
                 }
 
                 if (shdr.sh_type != SHT_NOBITS) {
-                    memcpy (& (dram_buffer [shdr.sh_addr & ~0xC0000000ul]), data->d_buf, data->d_size);
+		    mem->write(shdr.sh_addr, (uint32_t *)data->d_buf, data->d_size);
                 }
             }
 
