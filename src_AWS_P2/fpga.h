@@ -55,19 +55,21 @@ public:
     virtual void tandem_packet(const uint32_t num_bytes, const bsvvector_Luint8_t_L72 bytes) {
         //uint32_t *words = (uint32_t *)bytes;
         fprintf(stderr, "[TV] %d bytes", num_bytes);
-	if (num_bytes < 72) {
-	    for (uint32_t i = 0; i < num_bytes; i++) {
-		fprintf(stderr, " %02x", bytes[71 - i] & 0xFF);
-	    }
-	}
+        if (num_bytes < 72) {
+            for (uint32_t i = 0; i < num_bytes; i++) {
+                fprintf(stderr, " %02x", bytes[71 - i] & 0xFF);
+            }
+        }
         fprintf(stderr, "\n");
     }
 
     void wait() {
+        //fprintf(stderr, "fpga::wait\n");
         sem_wait(&sem);
     }
 
     uint32_t dmi_read(uint32_t addr) {
+        //fprintf(stderr, "sw dmi_read %x\n", addr);
         request->dmi_read(addr);
         wait();
         return rsp_data;
@@ -93,6 +95,12 @@ public:
         return val;
     }
 
+    void write_csr(int i, uint64_t val) {
+        dmi_write(5, (val >> 32) & 0xFFFFFFFF);
+        dmi_write(4, (val >>  0) & 0xFFFFFFFF);
+        dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | (1 << 16) | i);
+    }
+
     uint64_t read_gpr(int i) {
         dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
         uint64_t val = dmi_read(5);
@@ -108,60 +116,60 @@ public:
     }
 
     void sbcs_wait() {
-	uint32_t sbcs = 0;
-	int count = 0;
-	do {
-	    sbcs = dmi_read(DM_SBCS_REG);
-	    if (++count % 2) {
-		fprintf(stderr, "sbcs=%x\n", sbcs);
-	    }
-	} while (sbcs & SBCS_SBBUSY);
+        uint32_t sbcs = 0;
+        int count = 0;
+        do {
+            sbcs = dmi_read(DM_SBCS_REG);
+            if (++count % 2) {
+                fprintf(stderr, "sbcs=%x\n", sbcs);
+            }
+        } while (sbcs & SBCS_SBBUSY);
     }
 
     uint32_t read32(uint32_t addr) {
         if (last_addr != addr) {
-	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
-	    dmi_write(DM_SBADDRESS0_REG, addr);
-	}
-	sbcs_wait();
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+            dmi_write(DM_SBADDRESS0_REG, addr);
+        }
+        sbcs_wait();
         uint64_t lo = dmi_read(DM_SBDATA0_REG);
-	last_addr = addr + 4;
+        last_addr = addr + 4;
         return lo;
     }
 
     uint64_t read64(uint32_t addr) {
         if (last_addr != addr) {
-	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
-	    dmi_write(DM_SBADDRESS0_REG, addr);
-	}
-	sbcs_wait();
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+            dmi_write(DM_SBADDRESS0_REG, addr);
+        }
+        sbcs_wait();
         uint64_t lo = dmi_read(DM_SBDATA0_REG);
-	sbcs_wait();
+        sbcs_wait();
         uint64_t hi = dmi_read(DM_SBDATA0_REG);
-	last_addr = addr + 8;
+        last_addr = addr + 8;
         return (hi << 32) | lo;
     }
 
     void write32(uint32_t addr, uint32_t val) {
         if (last_addr != addr) {
-	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
-	    dmi_write(DM_SBADDRESS0_REG, addr);
-	}
-	sbcs_wait();
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
+            dmi_write(DM_SBADDRESS0_REG, addr);
+        }
+        sbcs_wait();
         dmi_write(DM_SBDATA0_REG, (val >>  0) & 0xFFFFFFFF);
-	last_addr = addr + 4;
+        last_addr = addr + 4;
     }
 
     void write64(uint32_t addr, uint64_t val) {
         if (last_addr != addr) {
-	    dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
-	    dmi_write(DM_SBADDRESS0_REG, addr);
-	}
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
+            dmi_write(DM_SBADDRESS0_REG, addr);
+        }
         dmi_write(DM_SBDATA0_REG, (val >>  0) & 0xFFFFFFFF);
-	sbcs_wait();
+        sbcs_wait();
         dmi_write(DM_SBDATA0_REG, (val >>  32) & 0xFFFFFFFF);
-	sbcs_wait();
-	last_addr = addr + 8;
+        sbcs_wait();
+        last_addr = addr + 8;
     }
 
     void halt(int timeout = 100) {
@@ -184,19 +192,19 @@ public:
     }
 
     void io_awaddr(uint32_t awaddr, uint16_t awlen, uint16_t awid) {
-	fprintf(stderr, "io_awaddr awaddr=%x\n", awaddr);
+        fprintf(stderr, "io_awaddr awaddr=%x\n", awaddr);
     }
 
     void io_araddr(uint32_t araddr, uint16_t arlen, uint16_t arid) {
-	fprintf(stderr, "io_araddr araddr=%x arlen=%d\n", araddr, arlen);
-	for (int i = 0; i < arlen / 8; i++) {
-	    int last = i == ((arlen / 8) - 1);
-	    request->io_rdata(0, arid, 0, last);
-	}
+        fprintf(stderr, "io_araddr araddr=%x arlen=%d\n", araddr, arlen);
+        for (int i = 0; i < arlen / 8; i++) {
+            int last = i == ((arlen / 8) - 1);
+            request->io_rdata(0, arid, 0, last);
+        }
     }
 
     void io_wdata(uint64_t wdata, uint8_t wstrb) {
-	fprintf(stderr, "io_wdata wdata=%lx wstrb=%x\n", wdata, wstrb);
+        fprintf(stderr, "io_wdata wdata=%lx wstrb=%x\n", wdata, wstrb);
     }
 
     void set_fabric_verbosity(uint8_t verbosity) {
