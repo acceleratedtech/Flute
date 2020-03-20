@@ -51,7 +51,10 @@ public:
         this->rsp_data = rsp_data;
         sem_post(&sem);
     }
-
+    virtual void dmi_status_data(uint8_t rsp_data) {
+        this->rsp_data = rsp_data;
+        sem_post(&sem);
+    }
     virtual void tandem_packet(const uint32_t num_bytes, const bsvvector_Luint8_t_L72 bytes) {
         //uint32_t *words = (uint32_t *)bytes;
         fprintf(stderr, "[TV] %d bytes", num_bytes);
@@ -68,6 +71,11 @@ public:
         sem_wait(&sem);
     }
 
+    uint32_t dmi_status() {
+        request->dmi_status();
+        wait();
+        return rsp_data;
+    }
     uint32_t dmi_read(uint32_t addr) {
         //fprintf(stderr, "sw dmi_read %x\n", addr);
         request->dmi_read(addr);
@@ -120,7 +128,7 @@ public:
         int count = 0;
         do {
             sbcs = dmi_read(DM_SBCS_REG);
-            if (++count % 2) {
+            if (++count % 8) {
                 fprintf(stderr, "sbcs=%x\n", sbcs);
             }
         } while (sbcs & SBCS_SBBUSY);

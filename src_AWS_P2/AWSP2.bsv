@@ -128,7 +128,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    Wire#(Bool) w_rready1  <- mkDWire(False);
    Wire#(Bool) w_rvalid1  <- mkDWire(False);
 
-//`ifndef BOARD_awsf1
+`ifndef BOARD_awsf1
    rule master0_handshake;
       to_slave0.m_awready(w_awready0);
       to_slave0.m_arready(w_arready0);
@@ -219,7 +219,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          readDataFifo0.deq();
       end
    endrule
-//`endif
+`endif
 
    rule master1_handshake;
       to_slave1.m_awready(w_awready1);
@@ -325,13 +325,18 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    endrule
 
 `ifdef INCLUDE_GDB_CONTROL
-   rule dmi_rsp_rl;
-      let rdata <- p2_core.dmi.read_data();
-      $display("dmi_rsp data %h", rdata);
-      response.dmi_read_data(rdata);
-   endrule
    let dmiReadFifo <- mkFIFOF();
    let dmiWriteFifo <- mkFIFOF();
+   let dmiDataFifo <- mkFIFOF();
+   rule dmi_read_data_rl;
+      let rdata <- p2_core.dmi.read_data();
+      //$display("dmi_read_data %h", rdata);
+      dmiDataFifo.enq(rdata);
+   endrule
+   rule dmi_read_rsp_rl;
+      let rdata <- toGet(dmiDataFifo).get();
+      response.dmi_read_data(rdata);
+   endrule
    rule dmi_read_rl;
       let addr <- toGet(dmiReadFifo).get();
       //$display("dmi_read addr %h", addr);
@@ -388,6 +393,15 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 `ifdef INCLUDE_GDB_CONTROL
         dmiWriteFifo.enq(tuple2(addr, data));
 `endif
+      endmethod
+      method Action dmi_status();
+         Bit#(8) status = 0;
+`ifdef INCLUDE_GDB_CONTROL
+         status[0] = pack(dmiReadFifo.notEmpty());
+         status[1] = pack(dmiWriteFifo.notEmpty());
+         status[2] = pack(dmiDataFifo.notEmpty());
+`endif
+         response.dmi_status_data(status);
       endmethod
       method Action register_region(Bit#(32) region, Bit#(32) objectId);
          objIds[region] <= truncate(objectId);

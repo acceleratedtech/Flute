@@ -146,15 +146,20 @@ int main(int argc, char * const *argv)
     // or deadlock will ensue.
     fpga->memory_ready();
 
+    fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
+    fpga->dmi_write(0x60, cpuverbosity);
+
     fprintf(stderr, "status  %x\n", fpga->dmi_read(DM_STATUS_REG));
     fprintf(stderr, "control %x\n", fpga->dmi_read(DM_CONTROL_REG));
     fprintf(stderr, "sbcs    %x\n", fpga->dmi_read(DM_SBCS_REG));
     fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
     fprintf(stderr, "asserting haltreq\n");
 
+    fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
+
     fpga->halt();
 
-    fpga->dmi_write(0x60, cpuverbosity);
+    fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
 
     // load the app code into DRAM
     uint64_t tohost_address = 0;
