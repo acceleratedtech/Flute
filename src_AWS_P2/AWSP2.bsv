@@ -8,8 +8,9 @@ import FIFOF        :: *;
 import GetPut       :: *;
 import Vector       :: *;
 
-import ConnectalConfig :: *;
-import ConnectalMemTypes::*;
+import AxiBits           :: *;
+import ConnectalConfig   :: *;
+import ConnectalMemTypes :: *;
 
 // ================================================================
 // Project imports
@@ -27,6 +28,8 @@ import PLIC :: *;    // for PLIC_Source_IFC type which is exposed at P2_Core int
 // Main Fabric
 import AXI4_Types   :: *;
 import AXI4_Fabric  :: *;
+import AXI4_Deburster :: *;
+import AXI_Mem_Controller :: *;
 import Fabric_Defs  :: *;
 
 `ifdef INCLUDE_TANDEM_VERIF
@@ -41,6 +44,12 @@ import Giraffe_IFC  :: *;
 `endif
 
 import AWSP2_IFC   :: *;
+
+`ifdef BOARD_awsf1
+typedef 3 NumFabricMasters;
+`else
+typedef 2 NumFabricMasters;
+`endif
 
 interface AWSP2;
   interface AWSP2_Request request;
@@ -60,7 +69,7 @@ endinterface
    Fabric_Addr ddr4_0_cached_addr_lim  = ddr4_0_cached_addr_base + ddr4_0_cached_addr_size;
 
 (* synthesize *)
-module mkAXI4_Fabric_2x2(AXI4_Fabric_IFC#(2, 2, 4, 64, 64, 0));
+module mkAXI4_Fabric_2x2(AXI4_Fabric_IFC#(NumFabricMasters, 2, 4, 64, 64, 0));
 
     function Tuple2 #(Bool, Bit #(TLog #(2))) fn_addr_to_slave_num(Bit #(64) addr);
         if ((ddr4_0_uncached_addr_base <= addr) && (addr < ddr4_0_uncached_addr_lim)) begin
@@ -74,7 +83,7 @@ module mkAXI4_Fabric_2x2(AXI4_Fabric_IFC#(2, 2, 4, 64, 64, 0));
         end
     endfunction
 
-   AXI4_Fabric_IFC#(2, 2, 4, 64, 64, 0) axiFabric <- mkAXI4_Fabric(fn_addr_to_slave_num);
+   AXI4_Fabric_IFC#(NumFabricMasters, 2, 4, 64, 64, 0) axiFabric <- mkAXI4_Fabric(fn_addr_to_slave_num);
 
    method reset = axiFabric.reset;
    method set_verbosity = axiFabric.set_verbosity;
@@ -94,7 +103,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    // FIXME: add boot ROM slave interface
 `define USE_FABRIC_2X2
 `ifdef USE_FABRIC_2X2
-   AXI4_Fabric_IFC#(2, 2, 4, 64, 64, 0) axiFabric <- mkAXI4_Fabric_2x2();
+   AXI4_Fabric_IFC#(NumFabricMasters, 2, 4, 64, 64, 0) axiFabric <- mkAXI4_Fabric_2x2();
    mkConnection(p2_core.master0, axiFabric.v_from_masters[0]);
    mkConnection(p2_core.master1, axiFabric.v_from_masters[1]);
    let to_slave0 = axiFabric.v_to_slaves[0];
@@ -219,7 +228,21 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          readDataFifo0.deq();
       end
    endrule
+`endif // not AWSF1
+`ifdef BOARD_awsf1
+   AXI4_Deburster_IFC #(Wd_Id, Wd_Addr, Wd_Data, Wd_User) deburster <- mkAXI4_Deburster();
+   let memController <- mkAXI_Mem_Controller();
+   function Tuple2 #(Bool, Bit #(TLog #(2))) fn_mem_addr_to_slave_num(Bit #(64) addr);
+      return tuple2(True, 0);
+   endfunction
+   // make this 2 masters to allow DMA from host
+   //AXI4_Fabric_IFC#(1, 1, 6, 64, 512, 0) memFabric <- mkAXI4_Fabric(fn_mem_addr_to_slave_num);
+   mkConnection(to_slave0, deburster.from_master);
+   mkConnection(deburster.to_slave, memController.slave);
+   //mkConnection(memController.to_raw_mem, memFabric.v_from_masters[0]);
+   let to_ddr = memController.to_raw_mem;
 `endif
+
 
    rule master1_handshake;
       to_slave1.m_awready(w_awready1);
@@ -429,7 +452,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
 `ifdef BOARD_awsf1
    interface AWSP2_Pin_IFC pins;
-      interface ddr = to_slave0;
+      interface ddr = to_ddr;
    endinterface
 `endif
 

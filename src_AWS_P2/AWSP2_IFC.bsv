@@ -28,5 +28,5 @@ endinterface
 
 interface AWSP2_Pin_IFC;
   (* always_ready, always_enabled, prefix="" *)
-  interface AXI4_Master_IFC#(4, 64, 64, 0) ddr;
+  interface AXI4_Master_IFC#(16, 64, 512, 0) ddr;
 endinterface
