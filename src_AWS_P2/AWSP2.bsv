@@ -101,17 +101,11 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    Vector#(16, Reg#(Bit#(8)))    objIds <- replicateM(mkReg(0));
 
    // FIXME: add boot ROM slave interface
-`define USE_FABRIC_2X2
-`ifdef USE_FABRIC_2X2
    AXI4_Fabric_IFC#(NumFabricMasters, 2, 4, 64, 64, 0) axiFabric <- mkAXI4_Fabric_2x2();
    mkConnection(p2_core.master0, axiFabric.v_from_masters[0]);
    mkConnection(p2_core.master1, axiFabric.v_from_masters[1]);
    let to_slave0 = axiFabric.v_to_slaves[0];
    let to_slave1 = axiFabric.v_to_slaves[1];
-`else
-   let to_slave0 = p2_core.master0;
-   let to_slave1 = p2_core.master1;
-`endif
 
    FIFOF#(MemRequest) readReqFifo0 <- mkFIFOF();
    FIFOF#(MemRequest) writeReqFifo0 <- mkFIFOF();
@@ -404,6 +398,29 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       interface Put writeDone = toPut(doneFifo0);
    endinterface );
 
+   function Action fn_reset();
+   action
+      axiFabric.reset();
+`ifdef BOARD_awsf1
+      deburster.reset();
+      memController.server_reset.request.put(?);
+      //memFabric.reset();
+`endif
+   endaction
+   endfunction
+
+   Reg#(Bool) rg_power_on_reset <- mkReg(False);
+   rule rl_reset if (!rg_power_on_reset);
+      fn_reset();
+      rg_power_on_reset <= True;
+   endrule
+   rule rl_reset_done;
+`ifdef BOARD_awsf1
+      let b <- memController.server_reset.response.get();
+      memController.set_addr_map(ddr4_0_uncached_addr_base, ddr4_0_cached_addr_lim);
+`endif
+   endrule
+
    interface AWSP2_Request request;
       method Action dmi_read(Bit#(7) addr);
         //$display("dmi_read req addr %h", addr);
@@ -418,11 +435,14 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 `endif
       endmethod
       method Action dmi_status();
-         Bit#(8) status = 0;
+         Bit#(16) status = 0;
 `ifdef INCLUDE_GDB_CONTROL
          status[0] = pack(dmiReadFifo.notEmpty());
          status[1] = pack(dmiWriteFifo.notEmpty());
          status[2] = pack(dmiDataFifo.notEmpty());
+`endif
+`ifdef BOARD_awsf1
+         status[15:8] = memController.status();
 `endif
          response.dmi_status_data(status);
       endmethod
@@ -436,6 +456,11 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       method Action capture_tv_info(Bool c);
 `ifdef INCLUDE_TANDEM_VERIF
          rg_capture_tv_info <= c;
+`endif
+      endmethod
+      method Action set_watch_tohost (Bool watch_tohost, Bit#(32) tohost_addr);
+`ifdef BOARD_awsf1
+        memController.set_watch_tohost(watch_tohost, extend(tohost_addr));
 `endif
       endmethod
 

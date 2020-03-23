@@ -12,6 +12,7 @@ interface AWSP2_Request;
   method Action register_region(Bit#(32) region, Bit#(32) objectId);
   method Action memory_ready();
   method Action capture_tv_info(Bool c);
+  method Action set_watch_tohost (Bool watch_tohost, Bit#(32) tohost_addr);
 
   method Action io_rdata(Bit#(64) data, Bit#(16) rid, Bit#(8) rresp, Bool last);
   method Action io_bdone(Bit#(16) bid, Bit#(8) bresp);
@@ -19,7 +20,7 @@ endinterface
 
 interface AWSP2_Response;
   method Action dmi_read_data(Bit#(32) rsp_data);
-  method Action dmi_status_data(Bit#(8) status);
+  method Action dmi_status_data(Bit#(16) status);
   method Action io_awaddr(Bit#(32) awaddr, Bit#(16) awlen, Bit#(16) awid);
   method Action io_araddr(Bit#(32) araddr, Bit#(16) arlen, Bit#(16) arid);
   method Action io_wdata(Bit#(64) wdata, Bit#(8) wstrb);

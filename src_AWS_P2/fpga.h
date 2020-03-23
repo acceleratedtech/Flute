@@ -51,7 +51,7 @@ public:
         this->rsp_data = rsp_data;
         sem_post(&sem);
     }
-    virtual void dmi_status_data(uint8_t rsp_data) {
+    virtual void dmi_status_data(uint16_t rsp_data) {
         this->rsp_data = rsp_data;
         sem_post(&sem);
     }
