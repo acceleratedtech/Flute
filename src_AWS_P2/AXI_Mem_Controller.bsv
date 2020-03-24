@@ -194,7 +194,7 @@ interface AXI_Mem_Controller_IFC;
    interface AXI4_Slave_IFC #(Wd_Id, Wd_Addr, Wd_Data, Wd_User) slave;
 
    // To raw memory (outside the SoC)
-   interface AXI4_Master_IFC #(16, Bits_per_Raw_Mem_Addr, Bits_per_Raw_Mem_Word, 0)  to_raw_mem;
+   interface AXI4_Master_IFC #(4, Bits_per_Raw_Mem_Addr, Bits_per_Raw_Mem_Word, 0)  to_raw_mem;
 
    // Catch-all status; return-value can identify the origin (0 = none)
    (* always_ready *)
@@ -258,7 +258,7 @@ module mkAXI_Mem_Controller (AXI_Mem_Controller_IFC);
    FIFOF #(Req) f_reqs <- mkPipelineFIFOF;
 
    // FIFOFs for requests/responses to raw memory
-   AXI4_Master_Xactor_IFC #(16, Bits_per_Raw_Mem_Addr, Bits_per_Raw_Mem_Word, 0) master_xactor <- mkAXI4_Master_Xactor;
+   AXI4_Master_Xactor_IFC #(4, Bits_per_Raw_Mem_Addr, Bits_per_Raw_Mem_Word, 0) master_xactor <- mkAXI4_Master_Xactor;
 
    // We maintain a 1-raw_mem_word cache
    Reg #(Bool)          rg_cached_clean        <- mkRegU;
@@ -307,7 +307,6 @@ module mkAXI_Mem_Controller (AXI_Mem_Controller_IFC);
 
    // On reset, we initialize the local cache with contents of raw_mem_addr 0
    rule rl_reset_reload_cache if (rg_state == STATE_RESET_RELOAD_CACHE);
-      let rda <- pop_o (slave_xactor.o_rd_addr);
       let raw_mem_req = AXI4_Rd_Addr { arid: 0,
                                        araddr: 0,
 				       arlen: 0,

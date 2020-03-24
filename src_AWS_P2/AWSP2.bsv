@@ -46,16 +46,22 @@ import Giraffe_IFC  :: *;
 import AWSP2_IFC   :: *;
 
 `ifdef BOARD_awsf1
-typedef 3 NumFabricMasters;
+typedef 2 NumFabricMasters;
 `else
 typedef 2 NumFabricMasters;
+`endif
+
+`ifdef BOARD_awsf1
+`ifdef AWSF1_DDR_A
+`define USE_DDR
+`endif
 `endif
 
 interface AWSP2;
   interface AWSP2_Request request;
   interface Vector#(1, MemReadClient#(DataBusWidth)) readClients;
   interface Vector#(1, MemWriteClient#(DataBusWidth)) writeClients;
-`ifdef BOARD_awsf1
+`ifdef USE_DDR
    interface AWSP2_Pin_IFC pins;
 `endif
 endinterface
@@ -95,7 +101,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    P2_Core_IFC p2_core <- mkP2_Core();
 
-   Reg#(Bit#(4)) rg_verbosity <- mkReg(0);
+   Reg#(Bit#(4)) rg_verbosity <- mkReg(1);
    Reg#(Bool) rg_ready <- mkReg(False);
 
    Vector#(16, Reg#(Bit#(8)))    objIds <- replicateM(mkReg(0));
@@ -131,99 +137,6 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    Wire#(Bool) w_rready1  <- mkDWire(False);
    Wire#(Bool) w_rvalid1  <- mkDWire(False);
 
-`ifndef BOARD_awsf1
-   rule master0_handshake;
-      to_slave0.m_awready(w_awready0);
-      to_slave0.m_arready(w_arready0);
-      to_slave0.m_wready(w_wready0);
-   endrule
-
-   rule debug0 if (False);
-      if (to_slave0.m_arvalid()
-         || w_arready0
-         || w_rvalid0
-         || to_slave0.m_rready())
-         if (rg_verbosity > 0) $display("master0 arvalid %d arready %d rvalid %d rready %d", to_slave0.m_arvalid(), w_arready0, w_rvalid0, to_slave0.m_rready());
-   endrule
-
-   rule master0_aw if (rg_ready);
-      if (to_slave0.m_awvalid()) begin
-          let awaddr = to_slave0.m_awaddr();
-          let len    = to_slave0.m_awlen();
-          let size   = to_slave0.m_awsize();
-          let awid   = to_slave0.m_awid();
-
-          Bit#(4)  objNumber = truncate(awaddr >> 28);
-          Bit#(28) objOffset = truncate(awaddr);
-          let objId = objIds[objNumber];
-          let burstLen = 8 * (len + 1);
-          if (rg_verbosity > 0) $display("master0 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h burstLen=%d", awaddr, len, size, awid, objId, objOffset, burstLen);
-          writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
-      end
-      w_awready0 <= writeReqFifo0.notFull();
-   endrule
-
-   rule master0_wdata if (rg_ready);
-      if (to_slave0.m_wvalid()) begin
-          let wdata = to_slave0.m_wdata;
-          let wstrb = to_slave0.m_wstrb;
-          let wlast = to_slave0.m_wlast;
-          if (rg_verbosity > 0) $display("master0 wdata %h wstrb %h", wdata, wstrb);
-          writeDataFifo0.enq(MemData { data: wdata, tag: 0, byte_enables: wstrb, last: wlast});
-       end
-       w_wready0 <= writeDataFifo0.notFull();
-    endrule
-
-   rule master0_b if (rg_ready);
-      let bvalid = doneFifo0.notEmpty();
-      let bid    = doneFifo0.first();
-      let bresp = 0;
-      let buser = 0;
-      to_slave0.m_bvalid(bvalid, truncate(bid), bresp, buser);
-      if (to_slave0.m_bready()) begin
-          doneFifo0.deq();
-      end
-   endrule
-
-   rule master0_ar if (rg_ready);
-      if (to_slave0.m_arvalid()) begin
-          let araddr = to_slave0.m_araddr();
-          let len    = to_slave0.m_arlen();
-          let size   = to_slave0.m_arsize();
-          let arid   = to_slave0.m_arid();
-
-          Bit#(4) objNumber = truncate(araddr >> 28);
-          Bit#(28) objOffset = truncate(araddr);
-
-          let objId = objIds[objNumber];
-          let burstLen = 8 * (len + 1);
-          if (rg_verbosity > 0) $display("master0 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
-          readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
-      end
-      w_arready0 <= readReqFifo0.notFull();
-
-   endrule
-
-   rule master0_rdata if (rg_ready);
-      let rdata = readDataFifo0.first;
-      if (rg_verbosity > 0) $display("master0 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
-
-      w_rvalid0 <= readDataFifo0.notEmpty();
-      to_slave0.m_rvalid(readDataFifo0.notEmpty(),
-                               truncate(rdata.tag),
-                               rdata.data,
-                               0,  // rresp
-                               rdata.last,
-                               0); // ruser
-
-
-      if (to_slave0.m_rready()) begin
-          //$display("master0_rdata_deq rvalid %d rready %d", w_rvalid0, to_slave0.m_rready());
-         readDataFifo0.deq();
-      end
-   endrule
-`endif // not AWSF1
-`ifdef BOARD_awsf1
    AXI4_Deburster_IFC #(Wd_Id, Wd_Addr, Wd_Data, Wd_User) deburster <- mkAXI4_Deburster();
    let memController <- mkAXI_Mem_Controller();
    function Tuple2 #(Bool, Bit #(TLog #(2))) fn_mem_addr_to_slave_num(Bit #(64) addr);
@@ -235,7 +148,106 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    mkConnection(deburster.to_slave, memController.slave);
    //mkConnection(memController.to_raw_mem, memFabric.v_from_masters[0]);
    let to_ddr = memController.to_raw_mem;
-`endif
+
+`ifndef USE_DDR
+   rule master0_handshake;
+      to_ddr.m_awready(w_awready0);
+      to_ddr.m_arready(w_arready0);
+      to_ddr.m_wready(w_wready0);
+   endrule
+
+   rule debug0 if (rg_ready);
+      if (to_ddr.m_arvalid()
+         || w_rvalid0)
+         if (rg_verbosity > 1) $display("master0 arvalid %d arready %d rvalid %d rready %d", to_ddr.m_arvalid(), w_arready0, w_rvalid0, to_ddr.m_rready());
+   endrule
+
+   rule master0_aw if (rg_ready);
+      if (to_ddr.m_awvalid()) begin
+          let awaddr = to_ddr.m_awaddr();
+          let awlen    = to_ddr.m_awlen();
+          let awsize   = to_ddr.m_awsize();
+          let awid   = to_ddr.m_awid();
+
+	  let byteaddr = (awaddr << 6) + 'h80000000;
+          Bit#(4)  objNumber = truncate(byteaddr >> 28);
+          Bit#(28) objOffset = truncate(byteaddr);
+          let objId = objIds[objNumber];
+          let burstLen = fromInteger(valueOf(TDiv#(DataBusWidth,8))) * (awlen + 1);
+          if (rg_verbosity > 0)
+	     $display("master0 awaddr %h awlen=%d awsize=%d awid=%d byteaddr=%h objId=%d objOffset=%h burstLen=%d",
+	              awaddr, awlen, awsize, awid, byteaddr, objId, objOffset, burstLen);
+          writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
+      end
+      w_awready0 <= writeReqFifo0.notFull();
+   endrule
+
+   rule master0_wdata if (rg_ready);
+      if (to_ddr.m_wvalid()) begin
+          let wdata = to_ddr.m_wdata;
+          let wstrb = to_ddr.m_wstrb;
+          let wlast = to_ddr.m_wlast;
+          if (rg_verbosity > 1) $display("master0 wdata %h wstrb %h", wdata, wstrb);
+          writeDataFifo0.enq(MemData { data: wdata, tag: 0, byte_enables: wstrb, last: wlast});
+       end
+       w_wready0 <= writeDataFifo0.notFull();
+    endrule
+
+   rule master0_b if (rg_ready);
+      let bvalid = doneFifo0.notEmpty();
+      let bid    = doneFifo0.first();
+      let bresp = 0;
+      let buser = 0;
+      to_ddr.m_bvalid(bvalid, truncate(bid), bresp, buser);
+      if (to_ddr.m_bready()) begin
+          doneFifo0.deq();
+      end
+   endrule
+
+   rule master0_ar if (rg_ready);
+      if (to_ddr.m_arvalid()) begin
+          let araddr = to_ddr.m_araddr();
+          let arlen    = to_ddr.m_arlen();
+          let arsize   = to_ddr.m_arsize();
+          let arid   = to_ddr.m_arid();
+
+	  let byteaddr = (araddr << 6) + 'h80000000;
+          Bit#(4)  objNumber = truncate(byteaddr >> 28);
+          Bit#(28) objOffset = truncate(byteaddr);
+
+          let objId = objIds[objNumber];
+          let burstLen = fromInteger(valueOf(TDiv#(DataBusWidth,8))) * (arlen + 1);
+          if (rg_verbosity > 0)
+	     $display("master0 araddr %h arlen=%d arsize=%d id=%d byteaddr=%h objId=%d objOffset=%h burstLen=%d",
+	               araddr, arlen, arsize, arid, byteaddr, objId, objOffset, burstLen);
+          readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
+      end
+      w_arready0 <= readReqFifo0.notFull();
+   endrule
+
+   rule master0_rdata if (rg_ready);
+
+      w_rvalid0 <= readDataFifo0.notEmpty();
+      if (readDataFifo0.notEmpty()) begin
+	 let rdata = readDataFifo0.first;
+	 if (rg_verbosity > 1 && to_ddr.m_rready()) $display("master0 rdata %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+	 to_ddr.m_rvalid(readDataFifo0.notEmpty(),
+				  truncate(rdata.tag),
+				  rdata.data,
+				  0,  // rresp
+				  rdata.last,
+				  0); // ruser
+
+
+	 if (to_ddr.m_rready()) begin
+	     if (rg_verbosity > 1) $display("master0_rdata_deq rvalid %d rready %d", readDataFifo0.notEmpty(), to_ddr.m_rready());
+	    readDataFifo0.deq();
+	 end
+      end
+   endrule
+`endif // not AWSF1
+
+
 
 
    rule master1_handshake;
@@ -244,12 +256,10 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       to_slave1.m_wready(w_wready1);
    endrule
 
-   rule debug1 if (False);
+   rule debug1 if (rg_ready);
       if (to_slave1.m_arvalid()
-         || w_arready1
-         || w_rvalid1
-         || to_slave1.m_rready())
-         $display("master1 arvalid %d arready %d rvalid %d rready %d", to_slave1.m_arvalid(), w_arready1, w_rvalid1, to_slave1.m_rready());
+         || w_rvalid1)
+         if (rg_verbosity > 1) $display("master1 arvalid %d arready %d rvalid %d rready %d", to_slave1.m_arvalid(), w_arready1, w_rvalid1, to_slave1.m_rready());
    endrule
 
    rule master1_aw if (rg_ready);
@@ -260,7 +270,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let awid   = to_slave1.m_awid();
 
           Bit#(4)  objNumber = truncate(awaddr >> 28);
-          Bit#(28) objOffset = truncate(awaddr);
+          Bit#(28) objOffset = truncate(awaddr << 0);
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
           $display("master1 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h burstLen=%d", awaddr, len, size, awid, objId, objOffset, burstLen);
@@ -312,7 +322,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    rule master1_rdata if (rg_ready);
       let rdata = readDataFifo1.first;
-      $display("master1 rdata data %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+      $display("master1 rdata %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
 
       w_rvalid1 <= readDataFifo1.notEmpty();
       to_slave1.m_rvalid(readDataFifo1.notEmpty(),
@@ -398,14 +408,14 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       interface Put writeDone = toPut(doneFifo0);
    endinterface );
 
+   Reg#(Bool) rg_addr_map_set <- mkReg(False);
    function Action fn_reset();
    action
       axiFabric.reset();
-`ifdef BOARD_awsf1
       deburster.reset();
-      memController.server_reset.request.put(?);
+      //memController.server_reset.request.put(?);
       //memFabric.reset();
-`endif
+      rg_addr_map_set <= False;
    endaction
    endfunction
 
@@ -415,10 +425,12 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       rg_power_on_reset <= True;
    endrule
    rule rl_reset_done;
-`ifdef BOARD_awsf1
+      $display("memController.server_reset.response.get()");
       let b <- memController.server_reset.response.get();
+   endrule
+   rule rl_set_addr_map if (!rg_addr_map_set);
       memController.set_addr_map(ddr4_0_uncached_addr_base, ddr4_0_cached_addr_lim);
-`endif
+      rg_addr_map_set <= True;
    endrule
 
    interface AWSP2_Request request;
@@ -441,16 +453,14 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          status[1] = pack(dmiWriteFifo.notEmpty());
          status[2] = pack(dmiDataFifo.notEmpty());
 `endif
-`ifdef BOARD_awsf1
          status[15:8] = memController.status();
-`endif
          response.dmi_status_data(status);
       endmethod
       method Action register_region(Bit#(32) region, Bit#(32) objectId);
          objIds[region] <= truncate(objectId);
       endmethod
       method Action memory_ready();
-          if (rg_verbosity > 0) $display("memory_ready");
+          $display("memory_ready");
           rg_ready <= True;
       endmethod
       method Action capture_tv_info(Bool c);
@@ -459,9 +469,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 `endif
       endmethod
       method Action set_watch_tohost (Bool watch_tohost, Bit#(32) tohost_addr);
-`ifdef BOARD_awsf1
         memController.set_watch_tohost(watch_tohost, extend(tohost_addr));
-`endif
       endmethod
 
       method Action io_rdata(Bit#(64) data, Bit#(16) rid, Bit#(8) rresp, Bool last);
@@ -475,7 +483,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    interface readClients = vec(readClient0);
    interface writeClients = vec(writeClient0);
 
-`ifdef BOARD_awsf1
+`ifdef USE_DDR
    interface AWSP2_Pin_IFC pins;
       interface ddr = to_ddr;
    endinterface
