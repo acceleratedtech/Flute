@@ -135,11 +135,13 @@ int main(int argc, char * const *argv)
     if (flash_filename)
         copyFile((char *)flashBuffer, flash_filename, flash_alloc_sz);
 
+    if (1) {
     // register the Flash memory object with the SoC (and program the MMU)
     fpga->register_region(7, dma->reference(romObject));
     fpga->register_region(4, dma->reference(flashObject));
     // register the DRAM memory object with the SoC (and program the MMU)
     fpga->register_region(8, dma->reference(dramObject));
+    }
 
     // Unblock memory accesses in the SoC.
     // This has to be done before attempting to read/write memory through DM System Bus
@@ -158,6 +160,7 @@ int main(int argc, char * const *argv)
     fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
 
     fpga->halt();
+    fpga->capture_tv_info(1);
 
     fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
 
@@ -169,7 +172,6 @@ int main(int argc, char * const *argv)
     uint64_t elf_entry = loadElf(memifc, elf_filename, dram_alloc_sz, &tohost_address);
     fprintf(stderr, "elf_entry=%08lx tohost_address=%08lx\n", elf_entry, tohost_address);
 
-
     for (int i = 0; i < 32; i++) {
         // transfer GPR i into data reg
         fpga->dmi_write(DM_COMMAND_REG, DM_COMMAND_ACCESS_REGISTER | (3 << 20) | (1 << 17) | 0x1000 | i);
@@ -180,15 +182,18 @@ int main(int argc, char * const *argv)
         entry = elf_entry;
 
     // update the dpc
-    fprintf(stderr, "setting pc val %#08x.%#08x\n", 0, entry);
+    fprintf(stderr, "setting pc val %08x\n", entry);
     fpga->write_csr(0x7b1, entry);
+    fprintf(stderr, "reading pc val %08lx\n", fpga->read_csr(0x7b1));
 
+    fpga->capture_tv_info(1);
     // and resume
     fpga->resume();
     fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
     fprintf(stderr, "haltsum1 %x\n", fpga->dmi_read(DM_HALTSUM1_REG));
 
     while (1) {
+
         // event processing is in the other thread
         fpga->halt();
 
@@ -201,7 +206,7 @@ int main(int argc, char * const *argv)
 
             fprintf(stderr, "mepc   %08lx\n", fpga->read_csr(0x341));
             fprintf(stderr, "mcause %08lx\n", fpga->read_csr(0x342));
-            fprintf(stderr, "mepc   %08lx\n", fpga->read_csr(0x343));
+            fprintf(stderr, "mtval  %08lx\n", fpga->read_csr(0x343));
 
             break;
         }
