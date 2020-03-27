@@ -373,6 +373,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let req <- toGet(dmiWriteFifo).get();
       //$display("dmi_write addr %h data %h", tpl_1(req), tpl_2(req));
       p2_core.dmi.write(tpl_1(req), tpl_2(req));
+      dmiDataFifo.enq(tpl_2(req));
    endrule
 `endif
 
