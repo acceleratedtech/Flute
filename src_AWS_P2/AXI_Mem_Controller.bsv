@@ -393,7 +393,7 @@ module mkAXI_Mem_Controller (AXI_Mem_Controller_IFC);
 				 && (! f_reqs.notEmpty)           // Idle
 				 && (! rg_cached_clean));
       let raw_mem_req = AXI4_Wr_Addr { awid: 0,
-                                       awaddr: rg_cached_raw_mem_addr,
+                                       awaddr: rg_cached_raw_mem_addr << 6,
 				       awlen: 0,
 				       awsize: axsize_64,
 				       awburst: 1,
@@ -429,7 +429,7 @@ module mkAXI_Mem_Controller (AXI_Mem_Controller_IFC);
 			    && (rg_cached_raw_mem_addr != req_raw_mem_addr)
 			    && (! rg_cached_clean));
       let raw_mem_req = AXI4_Wr_Addr { awid: 0,
-                                       awaddr: rg_cached_raw_mem_addr,
+                                       awaddr: rg_cached_raw_mem_addr << 6,
 				       awlen: 0,
 				       awsize: axsize_64,
 				       awburst: 1,
@@ -462,7 +462,7 @@ module mkAXI_Mem_Controller (AXI_Mem_Controller_IFC);
 			   && rg_cached_clean);
 
       let raw_mem_req = AXI4_Rd_Addr { arid: 0,
-                                       araddr: req_raw_mem_addr,
+                                       araddr: req_raw_mem_addr << 6,
 				       arlen: 0,
 				       arsize: axsize_64,
 				       arburst: 1,
@@ -604,7 +604,7 @@ module mkAXI_Mem_Controller (AXI_Mem_Controller_IFC);
 `ifdef INCLUDE_INITIAL_MEMZERO
    rule rl_zero_mem (rg_state == STATE_ZEROING_MEM);
       let raw_mem_req = AXI4_Wr_Addr { awid: 0,
-                                       awaddr: rg_cached_raw_mem_addr,
+                                       awaddr: rg_cached_raw_mem_addr << 6,
 				       awlen: 0,
 				       awsize: axsize_64,
 				       awburst: 1,
