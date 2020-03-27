@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string.h>
 #include "AWSP2_Request.h"
 #include "AWSP2_Response.h"
 
@@ -35,14 +36,69 @@
 #define SBCS_SBBUSY (1 << 21)
 #define SBCS_SBBUSYERROR (1 << 22)
 
+// ================================================================
+// Encodings
+// cf. "Trace Protocol Specification Version 2018-09-12, Darius Rad, Bluespec, Inc."
+
+const uint8_t te_op_begin_group     = 1;
+const uint8_t te_op_end_group       = 2;
+const uint8_t te_op_incr_pc         = 3;
+const uint8_t te_op_full_reg        = 4;
+const uint8_t te_op_incr_reg        = 5;
+const uint8_t te_op_incr_reg_OR     = 6;
+const uint8_t te_op_addl_state      = 7;
+const uint8_t te_op_mem_req         = 8;
+const uint8_t te_op_mem_rsp         = 9;
+const uint8_t te_op_hart_reset      = 10;
+const uint8_t te_op_state_init      = 11;
+const uint8_t te_op_16b_instr       = 16;
+const uint8_t te_op_32b_instr       = 17;
+
+const uint8_t te_mem_req_size_8     = 0;
+const uint8_t te_mem_req_size_16    = 1;
+const uint8_t te_mem_req_size_32    = 2;
+const uint8_t te_mem_req_size_64    = 3;
+
+const uint8_t te_mem_req_op_Load       = 0;
+const uint8_t te_mem_req_op_Store      = 1;
+const uint8_t te_mem_req_op_LR         = 2;
+const uint8_t te_mem_req_op_SC         = 3;
+const uint8_t te_mem_req_op_AMO_swap   = 4;
+const uint8_t te_mem_req_op_AMO_add    = 5;
+const uint8_t te_mem_req_op_AMO_xor    = 6;
+const uint8_t te_mem_req_op_AMO_and    = 7;
+const uint8_t te_mem_req_op_AMO_or     = 8;
+const uint8_t te_mem_req_op_AMO_min    = 9;
+const uint8_t te_mem_req_op_AMO_max    = 10;
+const uint8_t te_mem_req_op_AMO_minu   = 11;
+const uint8_t te_mem_req_op_AMO_maxu   = 12;
+const uint8_t te_mem_req_op_ifetch     = 13;
+
+const uint8_t te_mem_result_success    = 0;
+const uint8_t te_mem_result_failure    = 1;
+
+const uint8_t te_op_addl_state_priv     = 1;
+const uint8_t te_op_addl_state_paddr    = 2;
+const uint8_t te_op_addl_state_eaddr    = 3;
+const uint8_t te_op_addl_state_data8    = 4;
+const uint8_t te_op_addl_state_data16   = 5;
+const uint8_t te_op_addl_state_data32   = 6;
+const uint8_t te_op_addl_state_data64   = 7;
+const uint8_t te_op_addl_state_mtime    = 8;
+const uint8_t te_op_addl_state_pc_paddr = 9;
+const uint8_t te_op_addl_state_pc       = 10;
+
+
 class AWSP2 : public AWSP2_ResponseWrapper {
     sem_t sem;
     AWSP2_RequestProxy *request;
     uint32_t rsp_data;
     uint32_t last_addr;
+    uint32_t wdata_count;
+    uint32_t wid;
 public:
-    AWSP2(int id)
-      : AWSP2_ResponseWrapper(id), last_addr(0) {
+AWSP2(int id)
+    : AWSP2_ResponseWrapper(id), last_addr(0), wdata_count(0), wid(0) {
         sem_init(&sem, 0, 0);
         request = new AWSP2_RequestProxy(IfcNames_AWSP2_RequestS2H);
     }
@@ -55,15 +111,36 @@ public:
         this->rsp_data = rsp_data;
         sem_post(&sem);
     }
+    void capture_tv_info(int c) {
+        request->capture_tv_info(c);
+    }
     virtual void tandem_packet(const uint32_t num_bytes, const bsvvector_Luint8_t_L72 bytes) {
-        //uint32_t *words = (uint32_t *)bytes;
-        fprintf(stderr, "[TV] %d bytes", num_bytes);
-        if (num_bytes < 72) {
-            for (uint32_t i = 0; i < num_bytes; i++) {
-                fprintf(stderr, " %02x", bytes[71 - i] & 0xFF);
+        uint8_t packet[72];
+        for (int i = 0; i < 72; i++)
+            packet[i] = bytes[71 - i];
+        //fprintf(stderr, "[TV] %x %x %x %x\n", packet[0], packet[1], packet[2], packet[11]);
+        if (packet[0] == te_op_begin_group && packet[1] == te_op_state_init && packet[2] == te_op_mem_req && packet[11] == 0x21) {
+            uint64_t addr = 0;
+            uint32_t val = 0;
+            memcpy(&addr, &packet[3], sizeof(addr));
+            memcpy(&val, &packet[12], sizeof(val));
+            fprintf(stderr, "[TV] write mem [%08lx] <- %08x\n", addr, val);
+        } else if (packet[0] == te_op_begin_group && packet[1] == te_op_addl_state && packet[2] == te_op_addl_state_pc && packet[11] == te_op_32b_instr) {
+            uint64_t addr = 0;
+            uint32_t instr = 0;
+            memcpy(&addr, &packet[3], sizeof(addr));
+            memcpy(&instr, &packet[12], sizeof(instr));
+            fprintf(stderr, "[TV] next pc %08lx instr %08x\n", addr, instr);
+        } else {
+            
+            fprintf(stderr, "[TV] %d packet", num_bytes);
+            if (num_bytes < 72) {
+                for (uint32_t i = 0; i < num_bytes; i++) {
+                    fprintf(stderr, " %02x", packet[i] & 0xFF);
+                }
             }
+            fprintf(stderr, "\n");
         }
-        fprintf(stderr, "\n");
     }
 
     void wait() {
@@ -85,6 +162,7 @@ public:
 
     void dmi_write(uint32_t addr, uint32_t data) {
         request->dmi_write(addr, data);
+        wait();
     }
 
     void register_region(uint32_t region, uint32_t objid) {
@@ -128,17 +206,24 @@ public:
         int count = 0;
         do {
             sbcs = dmi_read(DM_SBCS_REG);
-            if (++count % 8) {
-                fprintf(stderr, "sbcs=%x\n", sbcs);
+            count++;
+            if (sbcs & (SBCS_SBBUSYERROR)) {
+                fprintf(stderr, "ERROR: sbcs=%x\n", sbcs);
             }
-        } while (sbcs & SBCS_SBBUSY);
+            if (sbcs & (SBCS_SBBUSY)) {
+                fprintf(stderr, "sbcs=%x %d\n", sbcs, count);
+            }
+        } while (sbcs & (SBCS_SBBUSY));
     }
 
     uint32_t read32(uint32_t addr) {
-        if (last_addr != addr) {
-            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+        if (1 || last_addr != addr) {
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONADDR | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+            sbcs_wait();
             dmi_write(DM_SBADDRESS0_REG, addr);
         }
+        sbcs_wait();
+        dmi_write(DM_SBCS_REG, 0);
         sbcs_wait();
         uint64_t lo = dmi_read(DM_SBDATA0_REG);
         last_addr = addr + 4;
@@ -146,12 +231,15 @@ public:
     }
 
     uint64_t read64(uint32_t addr) {
-        if (last_addr != addr) {
-            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+        if (1 || last_addr != addr) {
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONADDR | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT | SBCS_SBBUSYERROR);
+            sbcs_wait();
             dmi_write(DM_SBADDRESS0_REG, addr);
         }
         sbcs_wait();
         uint64_t lo = dmi_read(DM_SBDATA0_REG);
+        sbcs_wait();
+        dmi_write(DM_SBCS_REG, 0);
         sbcs_wait();
         uint64_t hi = dmi_read(DM_SBDATA0_REG);
         last_addr = addr + 8;
@@ -159,8 +247,8 @@ public:
     }
 
     void write32(uint32_t addr, uint32_t val) {
-        if (last_addr != addr) {
-            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
+        if (1 || last_addr != addr) {
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32);
             dmi_write(DM_SBADDRESS0_REG, addr);
         }
         sbcs_wait();
@@ -169,15 +257,17 @@ public:
     }
 
     void write64(uint32_t addr, uint64_t val) {
-        if (last_addr != addr) {
-            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBREADONDATA | SBCS_SBAUTOINCREMENT);
+        if (1 || last_addr != addr) {
+            dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBAUTOINCREMENT);
             dmi_write(DM_SBADDRESS0_REG, addr);
         }
+        sbcs_wait();
         dmi_write(DM_SBDATA0_REG, (val >>  0) & 0xFFFFFFFF);
         sbcs_wait();
         dmi_write(DM_SBDATA0_REG, (val >>  32) & 0xFFFFFFFF);
-        sbcs_wait();
         last_addr = addr + 8;
+        sbcs_wait();
+        dmi_write(DM_SBCS_REG, 0);
     }
 
     void halt(int timeout = 100) {
@@ -200,19 +290,28 @@ public:
     }
 
     void io_awaddr(uint32_t awaddr, uint16_t awlen, uint16_t awid) {
-        fprintf(stderr, "io_awaddr awaddr=%x\n", awaddr);
+        fprintf(stderr, "io_awaddr awaddr=%08x awlen=%d\n", awaddr, awlen);
+        wdata_count = awlen / 8;
+        wid = awid;
     }
 
     void io_araddr(uint32_t araddr, uint16_t arlen, uint16_t arid) {
-        fprintf(stderr, "io_araddr araddr=%x arlen=%d\n", araddr, arlen);
+        fprintf(stderr, "io_araddr araddr=%08x arlen=%d\n", araddr, arlen);
+        uint64_t instrs[8];
+        instrs[0] = (12 << 20); // ebreak
         for (int i = 0; i < arlen / 8; i++) {
             int last = i == ((arlen / 8) - 1);
-            request->io_rdata(0, arid, 0, last);
+            request->io_rdata(instrs[i], arid, 0, last);
         }
     }
 
     void io_wdata(uint64_t wdata, uint8_t wstrb) {
         fprintf(stderr, "io_wdata wdata=%lx wstrb=%x\n", wdata, wstrb);
+        wdata_count -= 1;
+        if (wdata_count <= 0) {
+            fprintf(stderr, "-> io_bdone\n");
+            request->io_bdone(wid, 0);
+        }
     }
 
     void set_fabric_verbosity(uint8_t verbosity) {
