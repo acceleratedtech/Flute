@@ -71,13 +71,33 @@ uint64_t AWSP2_Memory::read64(uint32_t addr)
 
 void AWSP2_Memory::write32(uint32_t addr, uint32_t data)
 {
+    fprintf(stderr, "write32 %08x %08x\n", addr, data);
     fpga->write32(addr, data);
 }
 
 void AWSP2_Memory::write64(uint32_t addr, uint64_t data)
 {
+    fprintf(stderr, "write64 %08x %016lx\n", addr, data);
     fpga->write64(addr, data);
 }
+
+void AWSP2_Memory::write(uint32_t start_addr, const uint32_t *data, size_t num_bytes)
+{
+    fprintf(stderr, "IMemory::write addr %x num_bytes %ld\n", start_addr, num_bytes);
+    fpga->dmi_write(DM_SBCS_REG, SBCS_SBACCESS32 | SBCS_SBAUTOINCREMENT);
+    fpga->sbcs_wait();
+    fpga->dmi_write(DM_SBADDRESS0_REG, start_addr);
+    fpga->sbcs_wait();
+    for (size_t i = 0; i < num_bytes; i += 4) {
+	fprintf(stderr, ".");
+        fpga->sbcs_wait();
+        fpga->dmi_write(DM_SBDATA0_REG, data[i / 4]);
+    }
+    fpga->sbcs_wait();
+    fpga->dmi_write(DM_SBCS_REG, 0);
+    fprintf(stderr, "\n");
+}
+
 
 uint64_t loadElf(IMemory *mem, const char *elf_filename, size_t max_mem_size, uint64_t *tohost_address)
 {

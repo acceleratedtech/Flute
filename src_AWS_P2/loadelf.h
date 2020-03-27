@@ -32,6 +32,7 @@ public:
     virtual uint64_t read64(uint32_t addr);
     virtual void write32(uint32_t addr, uint32_t data);
     virtual void write64(uint32_t addr, uint64_t data);
+    virtual void write(uint32_t start_addr, const uint32_t *data, size_t num_bytes);
 };
 
 uint64_t loadElf(IMemory *mem, const char *elf_filename, size_t max_mem_size, uint64_t *tohost_address);
