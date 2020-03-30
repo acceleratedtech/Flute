@@ -211,7 +211,7 @@ AWSP2(int id)
                 fprintf(stderr, "ERROR: sbcs=%x\n", sbcs);
             }
             if (sbcs & (SBCS_SBBUSY)) {
-                fprintf(stderr, "sbcs=%x %d\n", sbcs, count);
+                fprintf(stderr, "BUSY sbcs=%x %d\n", sbcs, count);
             }
         } while (sbcs & (SBCS_SBBUSY));
     }
