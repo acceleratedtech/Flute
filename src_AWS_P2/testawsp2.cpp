@@ -49,6 +49,7 @@ const struct option long_options[] = {
     { "entry",   required_argument, 0, 'E' },
     { "flash",   required_argument, 0, 'f' },
     { "usemem",  required_argument, 0, 'M' },
+    { "tv",      no_argument,       0, 'T' },
     { 0,         0,                 0, 0 }
 };
 
@@ -65,9 +66,10 @@ int main(int argc, char * const *argv)
     int cpuverbosity = 0;
     uint32_t entry = 0;
     int usemem = 0;
+    int tv = 0;
     while (1) {
         int option_index = optind ? optind : 1;
-        char c = getopt_long(argc, argv, "b:e:h",
+        char c = getopt_long(argc, argv, "b:e:hMTv",
                              long_options, &option_index);
         if (c == -1)
             break;
@@ -90,7 +92,10 @@ int main(int argc, char * const *argv)
             return 2;
         case 'M':
             usemem = 1;
-            return 2;
+            break;
+        case 'T':
+            tv = 1;
+            break;
         case 'v':
             cpuverbosity = strtoul(optarg, 0, 0);
             break;
@@ -160,7 +165,7 @@ int main(int argc, char * const *argv)
     fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
 
     fpga->halt();
-    fpga->capture_tv_info(1);
+    fpga->capture_tv_info(0);
 
     fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
 
@@ -186,7 +191,7 @@ int main(int argc, char * const *argv)
     fpga->write_csr(0x7b1, entry);
     fprintf(stderr, "reading pc val %08lx\n", fpga->read_csr(0x7b1));
 
-    fpga->capture_tv_info(1);
+    fpga->capture_tv_info(tv);
     // and resume
     fpga->resume();
     fprintf(stderr, "status %x\n", fpga->dmi_read(DM_STATUS_REG));
