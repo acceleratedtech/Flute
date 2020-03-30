@@ -89,7 +89,6 @@ void AWSP2_Memory::write(uint32_t start_addr, const uint32_t *data, size_t num_b
     fpga->dmi_write(DM_SBADDRESS0_REG, start_addr);
     fpga->sbcs_wait();
     for (size_t i = 0; i < num_bytes; i += 4) {
-	fprintf(stderr, ".");
         fpga->sbcs_wait();
         fpga->dmi_write(DM_SBDATA0_REG, data[i / 4]);
     }
