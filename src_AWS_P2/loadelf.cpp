@@ -19,7 +19,7 @@ void IMemory::write(uint32_t start_addr, const uint32_t *data, size_t num_bytes)
 {
     fprintf(stderr, "IMemory::write addr %x num_bytes %ld\n", start_addr, num_bytes);
     for (size_t i = 0; i < num_bytes; i += 4) {
-	fprintf(stderr, ".");
+        //fprintf(stderr, ".");
 	write32(start_addr + i, data[i / 4]);
     }
     fprintf(stderr, "\n");

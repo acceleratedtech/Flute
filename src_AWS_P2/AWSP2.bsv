@@ -159,7 +159,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    rule debug0 if (rg_ready);
       if (to_ddr.m_arvalid()
          || w_rvalid0)
-         if (rg_verbosity > 1) $display("master0 arvalid %d arready %d rvalid %d rready %d", to_ddr.m_arvalid(), w_arready0, w_rvalid0, to_ddr.m_rready());
+         if (rg_verbosity > 2) $display("master0 arvalid %d arready %d rvalid %d rready %d", to_ddr.m_arvalid(), w_arready0, w_rvalid0, to_ddr.m_rready());
    endrule
 
    rule master0_aw if (rg_ready);
@@ -169,12 +169,12 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let awsize   = to_ddr.m_awsize();
           let awid   = to_ddr.m_awid();
 
-	  let byteaddr = (awaddr << 6) + 'h80000000;
+	  let byteaddr = awaddr + 'h80000000;
           Bit#(4)  objNumber = truncate(byteaddr >> 28);
           Bit#(28) objOffset = truncate(byteaddr);
           let objId = objIds[objNumber];
           let burstLen = fromInteger(valueOf(TDiv#(DataBusWidth,8))) * (awlen + 1);
-          if (rg_verbosity > 0)
+          if (rg_verbosity > 1)
 	     $display("master0 awaddr %h awlen=%d awsize=%d awid=%d byteaddr=%h objId=%d objOffset=%h burstLen=%d",
 	              awaddr, awlen, awsize, awid, byteaddr, objId, objOffset, burstLen);
           writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
@@ -211,13 +211,13 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let arsize   = to_ddr.m_arsize();
           let arid   = to_ddr.m_arid();
 
-	  let byteaddr = (araddr << 6) + 'h80000000;
+	  let byteaddr = araddr + 'h80000000;
           Bit#(4)  objNumber = truncate(byteaddr >> 28);
           Bit#(28) objOffset = truncate(byteaddr);
 
           let objId = objIds[objNumber];
           let burstLen = fromInteger(valueOf(TDiv#(DataBusWidth,8))) * (arlen + 1);
-          if (rg_verbosity > 0)
+          if (rg_verbosity > 1)
 	     $display("master0 araddr %h arlen=%d arsize=%d id=%d byteaddr=%h objId=%d objOffset=%h burstLen=%d",
 	               araddr, arlen, arsize, arid, byteaddr, objId, objOffset, burstLen);
           readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });

@@ -55,7 +55,7 @@ const struct option long_options[] = {
 
 void usage(const char *name)
 {
-    fprintf(stderr, "Usage: %s [-b bootrombin] [--bootrom bootrombin] [--flash flashbin] [--elf elf] [ -e elf] [elf] [--cpuverbosity n]\n", name);
+    fprintf(stderr, "Usage: %s [-b bootrombin] [--bootrom bootrombin] [--flash flashbin] [--elf elf] [ -e elf] [elf] [--cpuverbosity n] [--tv]\n", name);
 }
 
 int main(int argc, char * const *argv)
@@ -121,7 +121,7 @@ int main(int argc, char * const *argv)
     fprintf(stderr, "romBuffer=%lx\n", (long)romBuffer);
 
     // allocate a shared memory object for Flash
-    size_t flash_alloc_sz = 0x08000000;
+    size_t flash_alloc_sz = 256*1024*1024;
     int flashObject = portalAlloc(flash_alloc_sz, 0);
     uint8_t *flashBuffer = (uint8_t *)portalMmap(flashObject, flash_alloc_sz);
     fprintf(stderr, "flashBuffer=%lx\n", (long)flashBuffer);
@@ -140,13 +140,11 @@ int main(int argc, char * const *argv)
     if (flash_filename)
         copyFile((char *)flashBuffer, flash_filename, flash_alloc_sz);
 
-    if (1) {
     // register the Flash memory object with the SoC (and program the MMU)
-    fpga->register_region(7, dma->reference(romObject));
-    fpga->register_region(4, dma->reference(flashObject));
+    fpga->register_region(4, dma->reference(romObject));
+    fpga->register_region(7, dma->reference(flashObject));
     // register the DRAM memory object with the SoC (and program the MMU)
     fpga->register_region(8, dma->reference(dramObject));
-    }
 
     // Unblock memory accesses in the SoC.
     // This has to be done before attempting to read/write memory through DM System Bus
