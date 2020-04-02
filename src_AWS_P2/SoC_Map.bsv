@@ -106,7 +106,7 @@ module mkSoC_Map (SoC_Map_IFC);
    // ----------------------------------------------------------------
    // Near_Mem_IO (CLINT)
 
-   Fabric_Addr near_mem_io_addr_base = 'h_1002_0000;
+   Fabric_Addr near_mem_io_addr_base = 'h_0200_0000;
    Fabric_Addr near_mem_io_addr_size = 'h_0001_0000;    // 64K
    Fabric_Addr near_mem_io_addr_lim  = near_mem_io_addr_base + near_mem_io_addr_size;
 
@@ -189,7 +189,7 @@ module mkSoC_Map (SoC_Map_IFC);
    function Bool fn_is_IO_addr (Fabric_Addr addr);
       return (   fn_is_plic_addr (addr)
 	      || fn_is_near_mem_io_addr (addr)
-	      || fn_is_far_mem_addr (addr)
+	      || fn_is_far_mem_io_addr (addr)
 	      || fn_is_boot_rom_addr (addr)
 	      || fn_is_ddr4_0_uncached_addr (addr)
 	      );
