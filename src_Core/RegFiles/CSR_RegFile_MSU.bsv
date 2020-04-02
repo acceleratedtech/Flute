@@ -393,8 +393,8 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
     // ( defines a virtual region for which enclave page tables are used in
     //   place of OS-controlled page tables)
     // (machine-mode non-standard read/write)
-    Reg#(WordXL) rg_mevbase <- mkReg(maxBound);           // impossible base & mask,
-    Reg#(WordXL) rg_mevmask <- mkReg(0);                  // so no enclave accesses are possible
+    Reg#(WordXL) rg_mevbase <- mkReg(0);           // impossible base & mask,
+    Reg#(WordXL) rg_mevmask <- mkReg(maxBound);    // so no enclave accesses are possible
 
     // ### Enclave page table base
     // (per core) register
@@ -500,8 +500,8 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
       rg_state <= RF_RUNNING;
 
       // <SANCTUM>
-      rg_mevbase <= maxBound;
-      rg_mevmask <= 0;                  // so no enclave accesses are possible
+      rg_mevbase <= 0;
+      rg_mevmask <= maxBound;                  // so no enclave accesses are possible
 
       //FIXME: Reg#(Bit#(44)) eppn_reg <- mkReg(0);
       rg_meatp <= 0;
