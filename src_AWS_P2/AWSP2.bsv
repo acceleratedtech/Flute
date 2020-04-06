@@ -101,7 +101,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    P2_Core_IFC p2_core <- mkP2_Core();
 
-   Reg#(Bit#(4)) rg_verbosity <- mkReg(1);
+   Reg#(Bit#(4)) rg_verbosity <- mkReg(0);
    Reg#(Bool) rg_ready <- mkReg(False);
 
    Vector#(16, Reg#(Bit#(8)))    objIds <- replicateM(mkReg(0));
@@ -273,7 +273,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           Bit#(28) objOffset = truncate(awaddr);
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
-          $display("master1 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h burstLen=%d", awaddr, len, size, awid, objId, objOffset, burstLen);
+          if (rg_verbosity > 0)
+              $display("master1 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h burstLen=%d", awaddr, len, size, awid, objId, objOffset, burstLen);
           writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: truncate(awaddr), burstLen: extend(burstLen), tag: extend(awid) });
       end
       w_awready1 <= writeReqFifo1.notFull();
@@ -284,7 +285,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let wdata = to_slave1.m_wdata;
           let wstrb = to_slave1.m_wstrb;
           let wlast = to_slave1.m_wlast;
-          $display("master1 wdata %h wstrb %h", wdata, wstrb);
+          if (rg_verbosity > 0)
+              $display("master1 wdata %h wstrb %h", wdata, wstrb);
           writeDataFifo1.enq(MemData { data: wdata, tag: 1, byte_enables: wstrb, last: wlast});
        end
        w_wready1 <= writeDataFifo1.notFull();
@@ -313,7 +315,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
-          $display("master1 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
+          if (rg_verbosity > 0)
+              $display("master1 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
           readReqFifo1.enq(MemRequest { sglId: extend(objId), offset: truncate(araddr), burstLen: extend(burstLen), tag: extend(arid) });
       end
       w_arready1 <= readReqFifo1.notFull();
@@ -322,7 +325,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    rule master1_rdata if (rg_ready);
       let rdata = readDataFifo1.first;
-      $display("master1 rdata %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
+      if (rg_verbosity > 0)
+          $display("master1 rdata %h rid %d last %d", rdata.data, rdata.tag, rdata.last);
 
       w_rvalid1 <= readDataFifo1.notEmpty();
       to_slave1.m_rvalid(readDataFifo1.notEmpty(),
