@@ -270,11 +270,11 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let awid   = to_slave1.m_awid();
 
           Bit#(4)  objNumber = truncate(awaddr >> 28);
-          Bit#(28) objOffset = truncate(awaddr << 0);
+          Bit#(28) objOffset = truncate(awaddr);
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
           $display("master1 awaddr %h len=%d size=%d id=%d objId=%d objOffset=%h burstLen=%d", awaddr, len, size, awid, objId, objOffset, burstLen);
-          writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
+          writeReqFifo1.enq(MemRequest { sglId: extend(objId), offset: truncate(awaddr), burstLen: extend(burstLen), tag: extend(awid) });
       end
       w_awready1 <= writeReqFifo1.notFull();
    endrule
@@ -314,7 +314,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let objId = objIds[objNumber];
           let burstLen = 8 * (len + 1);
           $display("master1 araddr %h len=%d size=%d id=%d objId=%d objOffset=%h", araddr, len, size, arid, objId, objOffset);
-          readReqFifo1.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
+          readReqFifo1.enq(MemRequest { sglId: extend(objId), offset: truncate(araddr), burstLen: extend(burstLen), tag: extend(arid) });
       end
       w_arready1 <= readReqFifo1.notFull();
 
