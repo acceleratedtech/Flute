@@ -434,10 +434,16 @@ function ActionValue #(VM_Xlate_Result)  fav_vm_xlate (WordXL             addr,
 	       Bool is_enclave_access = (pabase & parmask) == parbase;
 	       Bool inside_region_bitmap = True; //FIXME: Enclave (fn_Get_Addr_Regions(pabase, isLeafPTE(pte), level) & mrbm) != 0;
 
-               if (is_enclave_access)
+               if (is_enclave_access) begin
                   outcome = VM_XLATE_EXCEPTION;
-               if (!inside_region_bitmap)
+		  exc_code = exc_code_SANCTUM_ENCLAVE_ACCESS;
+                  $display("sanctum: is_enclave_access");
+               end
+               if (!inside_region_bitmap) begin
                   outcome = VM_XLATE_EXCEPTION;
+		  exc_code = exc_code_SANCTUM_REGION_ACCESS;
+                  $display("sanctum:  not inside_region_bitmap");
+               end
 
 	       // $display ("    fav_vm_xlate: PTE.A = %0d", fn_PTE_to_A (pte));
 	       if (fn_PTE_to_A (pte) == 1'b0) begin
