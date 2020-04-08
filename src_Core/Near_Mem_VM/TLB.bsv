@@ -431,7 +431,7 @@ function ActionValue #(VM_Xlate_Result)  fav_vm_xlate (WordXL             addr,
 `endif
 
                //FIXME: Check pabase sanctum parbase/parmask and mrbm
-	       Bool is_enclave_access = (pabase & parmask) == pabase;
+	       Bool is_enclave_access = (pabase & parmask) == parbase;
 	       Bool inside_region_bitmap = True; //FIXME: Enclave (fn_Get_Addr_Regions(pabase, isLeafPTE(pte), level) & mrbm) != 0;
 
                if (is_enclave_access)
