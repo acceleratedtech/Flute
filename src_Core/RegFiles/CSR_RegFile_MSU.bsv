@@ -900,6 +900,7 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 
 	       csr_addr_sscratch:   begin
 				       result       = wordxl;
+				       $display("sscratch <= %h", result);
 				       rg_sscratch <= result;
 				    end
 	       csr_addr_sepc:       begin
@@ -935,11 +936,7 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 				       result      = (wordxl & 'h_0FFF);  // 12 bits relevant
 				       rg_mideleg <= truncate (result);
 				    end
-	       csr_addr_meatp:      begin
-				       result   = wordxl;
-				       rg_meatp <= result;
-				       $display("Updating meatp: %h", result);
-				    end
+               // <SANCTUM>
 	       csr_addr_mevbase:    begin
 				       result   = wordxl;
 				       rg_mevbase <= result;
@@ -950,6 +947,43 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 				       rg_mevmask <= result;
 				       $display("Updating mevmask: %h", result);
 				    end
+	       csr_addr_meatp:      begin
+				       result   = wordxl;
+				       rg_meatp <= result;
+				       $display("Updating meatp: %h", result);
+				    end
+	       csr_addr_mparbase:      begin
+				       result   = wordxl;
+				       rg_mparbase <= result;
+				       $display("Updating mparbase: %h", result);
+				    end
+	       csr_addr_mparmask:      begin
+				       result   = wordxl;
+				       rg_mparmask <= result;
+				       $display("Updating mparmask: %h", result);
+				    end
+	       csr_addr_meparbase:      begin
+				       result   = wordxl;
+				       rg_meparbase <= result;
+				       $display("Updating meparbase: %h", result);
+				    end
+	       csr_addr_meparmask:      begin
+				       result   = wordxl;
+				       rg_meparmask <= result;
+				       $display("Updating meparmask: %h", result);
+				    end
+	       csr_addr_memrbm:      begin
+				       result   = wordxl;
+				       rg_memrbm <= result;
+				       $display("Updating memrbm: %h", result);
+				    end
+	       csr_addr_mmrbm:      begin
+				       result   = wordxl;
+				       rg_mmrbm <= result;
+				       $display("Updating mmrbm: %h", result);
+				    end
+               // </SANCTUM>
+				    
 `endif
 
 	       // Machine mode
