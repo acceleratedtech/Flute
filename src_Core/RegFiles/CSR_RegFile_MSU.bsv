@@ -1153,8 +1153,8 @@ module mkCSR_RegFile (CSR_RegFile_IFC);
 
       Bool priv_ok = priv >= csr_addr [9:8];      // Accessible at current privilege?
 
-      // TVM fault: cannot access SATP if MSTATUS.TVM is set
-      Bool tvm_fault = ((csr_addr == csr_addr_satp) && (csr_mstatus.fv_read [mstatus_tvm_bitpos] == 1'b1));
+      // TVM fault: cannot access SATP from S mode if MSTATUS.TVM is set
+      Bool tvm_fault = ((priv != m_Priv_Mode) && (csr_addr == csr_addr_satp) && (csr_mstatus.fv_read [mstatus_tvm_bitpos] == 1'b1));
 
       // TODO: MxDELEG fault: MIDELEG and MEDELEG do not exist in
       //     systems with only m_Priv and systems with m_Priv and u_Priv but
