@@ -9,6 +9,9 @@ interface AWSP2_Request;
   method Action dmi_write(Bit#(7) req_addr, Bit#(32) req_data);
   method Action dmi_status();
 
+  method Action ddr_read(Bit#(32) addr);
+  method Action ddr_write(Bit#(32) addr, Vector#(64, Bit#(8)) data, Bit#(64) byte_enable);
+
   method Action register_region(Bit#(32) region, Bit#(32) objectId);
   method Action memory_ready();
   method Action capture_tv_info(Bool c);
@@ -21,6 +24,9 @@ endinterface
 interface AWSP2_Response;
   method Action dmi_read_data(Bit#(32) rsp_data);
   method Action dmi_status_data(Bit#(16) status);
+
+  method Action ddr_data(Vector#(64, Bit#(8)) data);
+
   method Action io_awaddr(Bit#(32) awaddr, Bit#(16) awlen, Bit#(16) awid);
   method Action io_araddr(Bit#(32) araddr, Bit#(16) arlen, Bit#(16) arid);
   method Action io_wdata(Bit#(64) wdata, Bit#(8) wstrb);
@@ -30,4 +36,5 @@ endinterface
 interface AWSP2_Pin_IFC;
   (* always_ready, always_enabled, prefix="" *)
   interface AXI4_Master_IFC#(4, 64, 512, 0) ddr;
+  interface AXI4_Slave_IFC#(4, 64, 512, 0) pcis;
 endinterface

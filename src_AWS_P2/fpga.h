@@ -96,6 +96,7 @@ class AWSP2 : public AWSP2_ResponseWrapper {
     uint32_t last_addr;
     uint32_t wdata_count;
     uint32_t wid;
+    bsvvector_Luint8_t_L64 pcis_rsp_data;
 public:
 AWSP2(int id)
     : AWSP2_ResponseWrapper(id), last_addr(0), wdata_count(0), wid(0) {
@@ -110,6 +111,10 @@ AWSP2(int id)
     virtual void dmi_status_data(uint16_t rsp_data) {
         this->rsp_data = rsp_data;
         sem_post(&sem);
+    }
+    void ddr_data ( const bsvvector_Luint8_t_L64 data ) {
+	memcpy(&pcis_rsp_data, data, 64);
+	sem_post(&sem);
     }
     void capture_tv_info(int c) {
         request->capture_tv_info(c);
@@ -163,6 +168,17 @@ AWSP2(int id)
     void dmi_write(uint32_t addr, uint32_t data) {
         request->dmi_write(addr, data);
         wait();
+    }
+
+    void ddr_read(uint32_t addr, bsvvector_Luint8_t_L64 data) {
+	request->ddr_read(addr);
+	wait();
+	if (data)
+	    memcpy(data, pcis_rsp_data, 64);
+    }
+    void ddr_write(uint32_t addr, const bsvvector_Luint8_t_L64 data, uint64_t wstrb = 0xFFFFFFFFFFFFFFFFul) {
+	request->ddr_write(addr, data, wstrb);
+	wait();
     }
 
     void register_region(uint32_t region, uint32_t objid) {

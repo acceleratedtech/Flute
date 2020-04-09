@@ -25,6 +25,8 @@ import Core     :: *;
 // External interrupt request interface
 import PLIC :: *;    // for PLIC_Source_IFC type which is exposed at P2_Core interface
 
+import Semi_FIFOF :: *;
+
 // Main Fabric
 import AXI4_Types   :: *;
 import AXI4_Fabric  :: *;
@@ -92,6 +94,20 @@ module mkAXI4_Fabric_2x2(AXI4_Fabric_IFC#(NumFabricMasters, 2, 4, 64, 64, 0));
    interface v_to_slaves = axiFabric.v_to_slaves;
 endmodule
 
+(* synthesize *)
+module mkMemFabric(AXI4_Fabric_IFC#(3, 1, 4, 64, 512, 0));
+
+   function Tuple2 #(Bool, Bit #(0)) fn_mem_addr_to_slave_num(Bit #(64) addr);
+      return tuple2(True, 0);
+   endfunction
+   let memFabric <- mkAXI4_Fabric(fn_mem_addr_to_slave_num);
+
+   method reset = memFabric.reset;
+   method set_verbosity = memFabric.set_verbosity;
+   interface v_from_masters = memFabric.v_from_masters;
+   interface v_to_slaves = memFabric.v_to_slaves;
+endmodule
+
 module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    let soc_map <- mkSoC_Map();
@@ -135,15 +151,18 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
    AXI4_Deburster_IFC #(Wd_Id, Wd_Addr, Wd_Data, Wd_User) deburster <- mkAXI4_Deburster();
    let memController <- mkAXI_Mem_Controller();
-   function Tuple2 #(Bool, Bit #(TLog #(2))) fn_mem_addr_to_slave_num(Bit #(64) addr);
-      return tuple2(True, 0);
-   endfunction
-   // make this 2 masters to allow DMA from host
-   //AXI4_Fabric_IFC#(1, 1, 6, 64, 512, 0) memFabric <- mkAXI4_Fabric(fn_mem_addr_to_slave_num);
+
+   AXI4_Fabric_IFC#(3, 1, 4, 64, 512, 0) memFabric <- mkMemFabric();
    mkConnection(to_slave0, deburster.from_master);
    mkConnection(deburster.to_slave, memController.slave);
    //mkConnection(memController.to_raw_mem, memFabric.v_from_masters[0]);
+   //let to_ddr = memFabric.v_to_slaves[0];
    let to_ddr = memController.to_raw_mem;
+
+   AXI4_Master_Xactor_IFC#(4, 64, 512, 0) ddr_master_xactor <- mkAXI4_Master_Xactor();
+   mkConnection(ddr_master_xactor.axi_side, memFabric.v_from_masters[1]);
+   let from_pci = memFabric.v_from_masters[2];
+
 
 `ifndef USE_DDR
    rule master0_handshake;
@@ -280,7 +299,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let wstrb = to_slave1.m_wstrb;
           let wlast = to_slave1.m_wlast;
           if (rg_verbosity > 0)
-              $display("master1 wdata %h wstrb %h", wdata, wstrb);
+          $display("master1 wdata %h wstrb %h", wdata, wstrb);
           writeDataFifo1.enq(MemData { data: wdata, tag: 1, byte_enables: wstrb, last: wlast});
        end
        w_wready1 <= writeDataFifo1.notFull();
@@ -413,7 +432,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       axiFabric.reset();
       deburster.reset();
       //memController.server_reset.request.put(?);
-      //memFabric.reset();
+      memFabric.reset();
       rg_addr_map_set <= False;
    endaction
    endfunction
@@ -430,6 +449,16 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    rule rl_set_addr_map if (!rg_addr_map_set);
       memController.set_addr_map(min(soc_map.m_ddr4_0_uncached_addr_base, soc_map.m_ddr4_0_cached_addr_base), max(soc_map.m_ddr4_0_uncached_addr_lim, soc_map.m_ddr4_0_cached_addr_lim));
       rg_addr_map_set <= True;
+   endrule
+
+   rule rl_ddr_rdata;
+      let rdata <- pop_o(ddr_master_xactor.o_rd_data);
+      response.ddr_data(unpack(rdata.rdata));
+   endrule
+
+   rule rl_wr_resp;
+      let resp <- pop_o(ddr_master_xactor.o_wr_resp);
+      response.ddr_data(unpack(0));
    endrule
 
    interface AWSP2_Request request;
@@ -455,6 +484,47 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
          status[15:8] = memController.status();
          response.dmi_status_data(status);
       endmethod
+
+      method Action ddr_read(Bit#(32) addr);
+         let req = AXI4_Rd_Addr {
+            arid: 0,
+	    araddr: extend(addr),
+	    arlen: 0,
+	    arsize: axsize_64,
+	    arburst: 1,
+	    arlock: 0,
+	    arcache: 0,
+	    arprot: 0,
+	    arqos: 0,
+	    arregion: 0,
+	    aruser: 0
+	 };
+         ddr_master_xactor.i_rd_addr.enq(req);
+      endmethod
+      method Action ddr_write(Bit#(32) addr, Vector#(64, Bit#(8)) data, Bit#(64) byte_enables);
+         let req = AXI4_Wr_Addr {
+            awid: 0,
+	    awaddr: extend(addr),
+	    awlen: 0,
+	    awsize: axsize_64,
+	    awburst: 1,
+	    awlock: 0,
+	    awcache: 0,
+	    awprot: 0,
+	    awqos: 0,
+	    awregion: 0,
+	    awuser: 0
+	 };
+         ddr_master_xactor.i_wr_addr.enq(req);
+	 let wdata = AXI4_Wr_Data {
+	    wdata: pack(data),
+	    wstrb: byte_enables,
+	    wlast: True,
+	    wuser: 0
+	 };
+	 ddr_master_xactor.i_wr_data.enq(wdata);
+      endmethod
+
       method Action register_region(Bit#(32) region, Bit#(32) objectId);
          objIds[region] <= truncate(objectId);
       endmethod
@@ -485,6 +555,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
 `ifdef USE_DDR
    interface AWSP2_Pin_IFC pins;
       interface ddr = to_ddr;
+      interface pcis = from_pci;
    endinterface
 `endif
 
