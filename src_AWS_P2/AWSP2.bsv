@@ -66,22 +66,17 @@ interface AWSP2;
 `endif
 endinterface
 
-   Fabric_Addr ddr4_0_uncached_addr_base = 'h_8000_0000;
-   Fabric_Addr ddr4_0_uncached_addr_size = 'h_4000_0000;    // 1G
-   Fabric_Addr ddr4_0_uncached_addr_lim  = ddr4_0_uncached_addr_base + ddr4_0_uncached_addr_size;
-
-   Fabric_Addr ddr4_0_cached_addr_base = 'h_C000_0000;
-   Fabric_Addr ddr4_0_cached_addr_size = 'h_4000_0000;    // 1G
-   Fabric_Addr ddr4_0_cached_addr_lim  = ddr4_0_cached_addr_base + ddr4_0_cached_addr_size;
 
 (* synthesize *)
 module mkAXI4_Fabric_2x2(AXI4_Fabric_IFC#(NumFabricMasters, 2, 4, 64, 64, 0));
 
+    let soc_map <- mkSoC_Map();
+
     function Tuple2 #(Bool, Bit #(TLog #(2))) fn_addr_to_slave_num(Bit #(64) addr);
-        if ((ddr4_0_uncached_addr_base <= addr) && (addr < ddr4_0_uncached_addr_lim)) begin
+        if ((soc_map.m_ddr4_0_uncached_addr_base <= addr) && (addr < soc_map.m_ddr4_0_uncached_addr_lim)) begin
            return tuple2(True, 0);
         end
-        else if ((ddr4_0_cached_addr_base <= addr) && (addr < ddr4_0_cached_addr_lim)) begin
+        else if ((soc_map.m_ddr4_0_cached_addr_base <= addr) && (addr < soc_map.m_ddr4_0_cached_addr_lim)) begin
            return tuple2(True, 0);
         end
         else begin
@@ -99,6 +94,7 @@ endmodule
 
 module mkAWSP2#(AWSP2_Response response)(AWSP2);
 
+   let soc_map <- mkSoC_Map();
    P2_Core_IFC p2_core <- mkP2_Core();
 
    Reg#(Bit#(4)) rg_verbosity <- mkReg(0);
@@ -434,7 +430,7 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let b <- memController.server_reset.response.get();
    endrule
    rule rl_set_addr_map if (!rg_addr_map_set);
-      memController.set_addr_map(ddr4_0_uncached_addr_base, ddr4_0_cached_addr_lim);
+      memController.set_addr_map(min(soc_map.m_ddr4_0_uncached_addr_base, soc_map.m_ddr4_0_cached_addr_base), max(soc_map.m_ddr4_0_uncached_addr_lim, soc_map.m_ddr4_0_cached_addr_lim));
       rg_addr_map_set <= True;
    endrule
 
