@@ -113,8 +113,8 @@ AWSP2(int id)
         sem_post(&sem);
     }
     void ddr_data ( const bsvvector_Luint8_t_L64 data ) {
-	memcpy(&pcis_rsp_data, data, 64);
-	sem_post(&sem);
+        memcpy(&pcis_rsp_data, data, 64);
+        sem_post(&sem);
     }
     void capture_tv_info(int c) {
         request->capture_tv_info(c);
@@ -148,11 +148,6 @@ AWSP2(int id)
         }
     }
 
-    void wait() {
-        //fprintf(stderr, "fpga::wait\n");
-        sem_wait(&sem);
-    }
-
     uint32_t dmi_status() {
         request->dmi_status();
         wait();
@@ -171,14 +166,14 @@ AWSP2(int id)
     }
 
     void ddr_read(uint32_t addr, bsvvector_Luint8_t_L64 data) {
-	request->ddr_read(addr);
-	wait();
-	if (data)
-	    memcpy(data, pcis_rsp_data, 64);
+        request->ddr_read(addr);
+        wait();
+        if (data)
+            memcpy(data, pcis_rsp_data, 64);
     }
     void ddr_write(uint32_t addr, const bsvvector_Luint8_t_L64 data, uint64_t wstrb = 0xFFFFFFFFFFFFFFFFul) {
-	request->ddr_write(addr, data, wstrb);
-	wait();
+        request->ddr_write(addr, data, wstrb);
+        wait();
     }
 
     void register_region(uint32_t region, uint32_t objid) {
@@ -295,6 +290,7 @@ AWSP2(int id)
         }
         dmi_write(DM_CONTROL_REG, ~DM_CONTROL_HALTREQ & dmi_read(DM_CONTROL_REG));
     }
+
     void resume(int timeout = 100) {
         dmi_write(DM_CONTROL_REG, DM_CONTROL_RESUMEREQ | dmi_read(DM_CONTROL_REG));
         for (int i = 0; i < 100; i++) {
@@ -304,6 +300,22 @@ AWSP2(int id)
         }
         dmi_write(DM_CONTROL_REG, ~DM_CONTROL_RESUMEREQ & dmi_read(DM_CONTROL_REG));
     }
+
+    void irq_set_levels(uint32_t w1s) {
+        request->irq_set_levels(w1s);
+    }
+
+    void irq_clear_levels(uint32_t w1c) {
+        request->irq_clear_levels(w1c);
+    }
+
+    uint32_t read_irq_status() {
+        request->read_irq_status();
+        wait();
+        return rsp_data;
+    }
+
+// handlers below here
 
     void io_awaddr(uint32_t awaddr, uint16_t awlen, uint16_t awid) {
         fprintf(stderr, "io_awaddr awaddr=%08x awlen=%d\n", awaddr, awlen);
@@ -330,7 +342,20 @@ AWSP2(int id)
         }
     }
 
+    void irq_status(uint32_t levels) {
+        this->rsp_data = levels;
+        sem_post(&sem);
+    }
+
     void set_fabric_verbosity(uint8_t verbosity) {
         request->set_fabric_verbosity(verbosity);
     }
+
+ private:
+
+    void wait() {
+        //fprintf(stderr, "fpga::wait\n");
+        sem_wait(&sem);
+    }
+
 };

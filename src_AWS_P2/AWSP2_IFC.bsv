@@ -19,6 +19,10 @@ interface AWSP2_Request;
 
   method Action io_rdata(Bit#(64) data, Bit#(16) rid, Bit#(8) rresp, Bool last);
   method Action io_bdone(Bit#(16) bid, Bit#(8) bresp);
+
+  method Action irq_set_levels(Bit#(32) w1s);
+  method Action irq_clear_levels(Bit#(32) w1c);
+  method Action read_irq_status();
 endinterface
 
 interface AWSP2_Response;
@@ -30,6 +34,9 @@ interface AWSP2_Response;
   method Action io_awaddr(Bit#(32) awaddr, Bit#(16) awlen, Bit#(16) awid);
   method Action io_araddr(Bit#(32) araddr, Bit#(16) arlen, Bit#(16) arid);
   method Action io_wdata(Bit#(64) wdata, Bit#(8) wstrb);
+
+  method Action irq_status(Bit#(32) levels);
+
   method Action tandem_packet(Bit#(32) num_bytes, Vector#(72, Bit#(8)) bytes);
 endinterface
 

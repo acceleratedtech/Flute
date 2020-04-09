@@ -116,6 +116,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
    Reg#(Bit#(4)) rg_verbosity <- mkReg(0);
    Reg#(Bool) rg_ready <- mkReg(False);
 
+   Reg#(Bit#(32)) rg_irq_levels[2] <- mkCReg(2, 0);
+
    Vector#(16, Reg#(Bit#(8)))    objIds <- replicateM(mkReg(0));
 
    // FIXME: add boot ROM slave interface
@@ -461,6 +463,10 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       response.ddr_data(unpack(0));
    endrule
 
+   rule rl_irq_levels;
+      p2_core.interrupt_reqs(truncate(rg_irq_levels[0]));
+   endrule
+
    interface AWSP2_Request request;
       method Action dmi_read(Bit#(7) addr);
         //$display("dmi_read req addr %h", addr);
@@ -547,6 +553,17 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       method Action io_bdone(Bit#(16) bid, Bit#(8) bresp);
          doneFifo1.enq(truncate(bid));
       endmethod
+
+      method Action irq_set_levels(Bit#(32) w1s);
+         rg_irq_levels[1] <= w1s | rg_irq_levels[1];
+      endmethod
+      method Action irq_clear_levels(Bit#(32) w1c);
+         rg_irq_levels[1] <= ~w1c & rg_irq_levels[1];
+      endmethod
+      method Action read_irq_status();
+         response.irq_status(rg_irq_levels[0]);
+      endmethod
+
    endinterface
 
    interface readClients = vec(readClient0);
