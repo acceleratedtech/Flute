@@ -165,15 +165,15 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let awsize   = to_ddr.m_awsize();
           let awid   = to_ddr.m_awid();
 
-	  let byteaddr = awaddr + 'h80000000;
-          Bit#(4)  objNumber = truncate(byteaddr >> 28);
-          Bit#(28) objOffset = truncate(byteaddr);
-          let objId = objIds[objNumber];
+          Bit#(30) byteaddr = truncate(awaddr);
+          let objId = objIds[8];
           let burstLen = fromInteger(valueOf(TDiv#(DataBusWidth,8))) * (awlen + 1);
-          if (rg_verbosity > 1)
-	     $display("master0 awaddr %h awlen=%d awsize=%d awid=%d byteaddr=%h objId=%d objOffset=%h burstLen=%d",
-	              awaddr, awlen, awsize, awid, byteaddr, objId, objOffset, burstLen);
-          writeReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(awid) });
+          let req = MemRequest { sglId: extend(objId), offset: extend(byteaddr), burstLen: extend(burstLen), tag: extend(awid) };
+          if (rg_verbosity > 1 || truncate(req.offset) != byteaddr)
+             $display("master0 awaddr %h awlen=%d awsize=%d awid=%d byteaddr=%h objId=%d burstLen=%d",
+                      awaddr, awlen, awsize, awid, byteaddr, objId, burstLen);
+
+          writeReqFifo0.enq(req);
       end
       w_awready0 <= writeReqFifo0.notFull();
    endrule
@@ -207,16 +207,14 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
           let arsize   = to_ddr.m_arsize();
           let arid   = to_ddr.m_arid();
 
-	  let byteaddr = araddr + 'h80000000;
-          Bit#(4)  objNumber = truncate(byteaddr >> 28);
-          Bit#(28) objOffset = truncate(byteaddr);
-
-          let objId = objIds[objNumber];
+          Bit#(30) byteaddr = truncate(araddr);
+          let objId = objIds[8];
           let burstLen = fromInteger(valueOf(TDiv#(DataBusWidth,8))) * (arlen + 1);
-          if (rg_verbosity > 1)
-	     $display("master0 araddr %h arlen=%d arsize=%d id=%d byteaddr=%h objId=%d objOffset=%h burstLen=%d",
-	               araddr, arlen, arsize, arid, byteaddr, objId, objOffset, burstLen);
-          readReqFifo0.enq(MemRequest { sglId: extend(objId), offset: extend(objOffset), burstLen: extend(burstLen), tag: extend(arid) });
+          let req = MemRequest { sglId: extend(objId), offset: extend(byteaddr), burstLen: extend(burstLen), tag: extend(arid) };
+          if (rg_verbosity > 1 || truncate(req.offset) != byteaddr)
+             $display("master0 araddr %h arlen=%d arsize=%d arid=%d byteaddr=%h objId=%d burstLen=%d",
+                       araddr, arlen, arsize, arid, byteaddr, objId, burstLen);
+          readReqFifo0.enq(req);
       end
       w_arready0 <= readReqFifo0.notFull();
    endrule
