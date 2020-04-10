@@ -151,6 +151,32 @@ int main(int argc, char * const *argv)
     // or deadlock will ensue.
     fpga->memory_ready();
 
+    fpga->capture_tv_info(0);
+    if (0) {
+	fpga->halt();
+	fpga->capture_tv_info(tv);
+
+	uint8_t test_data[64];
+	for (int i = 0; i < 64; i++)
+	    test_data[i] = i;
+	fpga->ddr_write(0x80000000, test_data, 0xFFFFFFFFFFFFFFFFul);
+	memset(test_data, 0, sizeof(test_data));
+	sleep(1);
+	fpga->ddr_read(0x80000000, test_data);
+	for (int i = 0; i < 64; i++)
+	    fprintf(stderr, " %02x", test_data[i]);
+	fprintf(stderr, "\n");
+	fprintf(stderr, "via dmi: %08x\n", fpga->dmi_read(0x80000000));
+
+	fpga->write_csr(0x7b1, 0x80000000);
+
+	fpga->capture_tv_info(tv);
+
+	// and resume
+	fpga->resume();
+	sleep(120);
+	return 0;
+    }
     fprintf(stderr, "dmi state machine status %d\n", fpga->dmi_status());
     fpga->dmi_write(0x60, cpuverbosity);
 
@@ -202,7 +228,7 @@ int main(int argc, char * const *argv)
 
         uint64_t dpc = fpga->read_csr(0x7b1);
         fprintf(stderr, "pc val %08lx\n", dpc);
-        if (dpc == 0x1000) {
+        if (dpc == 0x1000 || dpc == 0x80003160) {
             for (int i = 0; i < 32; i++) {
                 fprintf(stderr, "reg %d val %08lx\n", i, fpga->read_gpr(i));
             }
