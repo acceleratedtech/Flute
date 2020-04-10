@@ -449,7 +449,8 @@ module mkAWSP2#(AWSP2_Response response)(AWSP2);
       let b <- memController.server_reset.response.get();
    endrule
    rule rl_set_addr_map if (!rg_addr_map_set);
-      memController.set_addr_map(min(soc_map.m_ddr4_0_uncached_addr_base, soc_map.m_ddr4_0_cached_addr_base), max(soc_map.m_ddr4_0_uncached_addr_lim, soc_map.m_ddr4_0_cached_addr_lim));
+      memController.set_addr_map(min(soc_map.m_ddr4_0_uncached_addr_base, soc_map.m_ddr4_0_cached_addr_base),
+                                 max(soc_map.m_ddr4_0_uncached_addr_lim, soc_map.m_ddr4_0_cached_addr_lim));
       rg_addr_map_set <= True;
    endrule
 
