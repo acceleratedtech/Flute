@@ -538,7 +538,7 @@ endfunction
 
 // Exception Codes in mcause
 
-typedef Bit #(4) Exc_Code;
+typedef Bit #(5) Exc_Code;
 
 // When Interrupt = 1 (interrupt)
 
@@ -582,9 +582,9 @@ Exc_Code  exc_code_STORE_AMO_PAGE_FAULT          = 15;
 
 // Extra exception codes for tagging
 //<SANCTUM>
-Exc_Code  exc_code_TAG_LOAD_FAULT                = 16;
-Exc_Code  exc_code_TAG_STORE_FAULT               = 17;
-Exc_Code  exc_code_TAG_NEXT_PC_FAULT             = 18;
+//Exc_Code  exc_code_TAG_LOAD_FAULT                = 16;
+//Exc_Code  exc_code_TAG_STORE_FAULT               = 17;
+//Exc_Code  exc_code_TAG_NEXT_PC_FAULT             = 18;
 Exc_Code  exc_code_SANCTUM_ENCLAVE_ACCESS        = 19;
 Exc_Code  exc_code_SANCTUM_REGION_ACCESS         = 20;
 //</SANCTUM>
