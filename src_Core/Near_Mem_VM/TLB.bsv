@@ -145,6 +145,19 @@ typedef struct {
    } TLBE #(numeric type tag_sz)
 deriving (Bits, FShow);
 
+function Bool isLeafPTE(PTE pte);
+    return unpack(pte[pte_R_offset]) || unpack(pte[pte_W_offset]) || unpack(pte[pte_W_offset]);
+endfunction
+
+function Addr getAddrRegions(Addr addr, Bool isLeaf, Bit#(2) level);
+   Addr result = (1 << (addr[30:25]));
+   if (isLeaf && (level == 2)) begin // giga pages cross multiple regions
+     result = ((addr[30] == 1'b1) ? 64'hFFFFFFFF00000000 : 64'h00000000FFFFFFFF); // Assume 64 x 32-MB regions
+   end
+   return result;
+endfunction
+
+
 // ================================================================
 // TLB module
 
@@ -432,7 +445,8 @@ function ActionValue #(VM_Xlate_Result)  fav_vm_xlate (WordXL             addr,
 
                //FIXME: Check pabase sanctum parbase/parmask and mrbm
 	       Bool is_enclave_access = (pabase & parmask) == parbase;
-	       Bool inside_region_bitmap = True; //FIXME: Enclave (fn_Get_Addr_Regions(pabase, isLeafPTE(pte), level) & mrbm) != 0;
+ 	       Bool inside_region_bitmap = (getAddrRegions(pabase, isLeafPTE(pte), tlb_result.pte_level) & mrbm) != 0;
+
 
                if (is_enclave_access) begin
                   outcome = VM_XLATE_EXCEPTION;
